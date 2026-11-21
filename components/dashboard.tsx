@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, CalendarDays, Check, ChevronLeft, ChevronRight, CreditCard, Goal, KeyRound, LayoutDashboard, ListChecks, LogOut, Menu, Moon, MoonStar, MoreHorizontal, Palette, Pencil, Percent, PiggyBank, Plus, RefreshCw, Repeat, Send, Settings2, Smartphone, Sparkles, Sun, Target, Trash2, TrendingDown, TrendingUp, Trophy, Wallet, X } from "lucide-react"
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, CalendarDays, Check, ChevronLeft, ChevronRight, CreditCard, Info, Tags, Goal, KeyRound, LayoutDashboard, ListChecks, LogOut, Menu, Moon, MoonStar, MoreHorizontal, Palette, Pencil, Percent, PiggyBank, Plus, RefreshCw, Repeat, Send, Settings2, Smartphone, Sparkles, Sun, Target, Trash2, TrendingDown, TrendingUp, Trophy, Wallet, X } from "lucide-react"
 import { api, type DashboardData } from "@/lib/client-api"
 import { CARD_THEMES, MENU_KEYS } from "@/lib/card-themes"
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "@/lib/categories"
 import { IbadahPage, NextPrayerMini, NotificationPrefs } from "@/components/ibadah"
 import { IconPicker, iconFor } from "@/components/icons"
 import { RoutinesPanel, WEEKDAYS, type Routine } from "@/components/routines"
@@ -27,10 +28,10 @@ type Dialog =
   | { type: "routine"; item: Routine }
   | { type: "password" }
   | { type: "theme" }
+  | { type: "finance" }
+  | { type: "categories" }
 type Toast = { id: number; title: string; body?: string }
 
-const EXPENSE_CATEGORIES = ["Makan & minum", "Transportasi", "Pendidikan", "Belanja", "Tagihan", "Hiburan", "Kesehatan", "Lainnya"]
-const INCOME_CATEGORIES = ["Pemasukan", "Uang saku", "Gaji", "Hadiah", "Bonus"]
 const REPEAT_LABEL = { none: "Sekali", daily: "Setiap hari", weekly: "Setiap minggu", monthly: "Setiap bulan" } as const
 const NAV: { label: Tab; icon: LucideIcon }[] = [
   { label: "Ringkasan", icon: LayoutDashboard }, { label: "Keuangan", icon: Wallet }, { label: "Ibadah", icon: MoonStar }, { label: "Jadwal", icon: CalendarDays },
@@ -218,6 +219,7 @@ export function Dashboard() {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: timezone, hour: "2-digit", hour12: false }).format(new Date()))
   const greeting = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 18 ? "Selamat sore" : "Selamat malam"
   const pageTheme = data.cardThemes[active] ?? "none"
+  const needsOpening = stats.openingBalance === 0 && stats.monthIncomeCount === 0 && stats.balance <= 0
 
   const patchGoal = (id: string, body: Record<string, unknown>, msg?: string) => {
     // Update optimistis: checklist/persen langsung berubah di layar, server menyusul.
@@ -270,6 +272,7 @@ export function Dashboard() {
       <div className="page-wrap" data-card-theme={pageTheme}>
         {active === "Ringkasan" && <>
           <div className="greeting-row"><div><div className="eyebrow"><span className="live-dot"/>{dateLabel}</div><h1>{greeting}, <em>{user.displayName}.</em></h1><p className="page-subtitle">Hari yang baik dimulai dari langkah kecil. Kamu sudah melakukannya.</p></div><button className="primary-button" onClick={() => setDialog({ type: "transaction" })}><Plus size={17}/> Catat aktivitas</button></div>
+          {needsOpening && <OpeningHint onOpen={() => setDialog({ type: "finance" })}/>}
           <NextPrayerMini onOpen={() => selectPage("Ibadah")}/>
           <section className="stats-grid" aria-label="Ringkasan keuangan">
             <article className="stat-card glass-panel"><div className="stat-top"><span>Total saldo</span><span className="stat-icon mint-bg"><Wallet size={18}/></span></div><strong className="stat-value">{stats.balance < 0 ? "− " : ""}{money(stats.balance)}</strong><div className="stat-foot">{stats.balanceChangePct !== null ? <span className={stats.balanceChangePct >= 0 ? "positive" : "soft-text"}>{stats.balanceChangePct >= 0 ? <TrendingUp size={13}/> : <TrendingDown size={13}/>} {Math.abs(stats.balanceChangePct).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%</span> : <span className="soft-text">Mulai mencatat</span>}<span>dari awal bulan</span></div></article>
@@ -287,11 +290,17 @@ export function Dashboard() {
 
         {active === "Keuangan" && <>
           <PageHeading eyebrow="UANGMU, DENGAN SADAR" title="Keuangan" description="Lihat ke mana uangmu pergi dan rayakan setiap kemajuan kecil." action={<button className="primary-button" onClick={() => setDialog({ type: "transaction" })}><Plus size={17}/> Catat transaksi</button>}/>
-          <section className="stats-grid"><Stat title="Total saldo" value={`${stats.balance < 0 ? "− " : ""}${money(stats.balance)}`} icon={<Wallet size={18}/>} color="mint-bg"/><Stat title="Pemasukan bulan ini" value={money(stats.monthIncome)} icon={<ArrowDownLeft size={18}/>} color="violet-bg"/><Stat title="Pengeluaran bulan ini" value={money(stats.monthExpense)} icon={<ArrowUpRight size={18}/>} color="pink-bg"/><Stat title="Anggaran tersisa" value={money(budgetLeft)} icon={<Target size={18}/>} color="amber-bg" foot={`dari ${money(stats.monthlyBudget)}`}/></section>
+          {needsOpening && <OpeningHint onOpen={() => setDialog({ type: "finance" })}/>}
+          <section className="stats-grid">
+            <Stat title="Total saldo" value={`${stats.balance < 0 ? "− " : ""}${money(stats.balance)}`} icon={<Wallet size={18}/>} color="mint-bg" foot={<button className="stat-link" onClick={() => setDialog({ type: "finance" })}>Saldo awal {money(stats.openingBalance)} · ubah</button>}/>
+            <Stat title="Pemasukan bulan ini" value={money(stats.monthIncome)} icon={<ArrowDownLeft size={18}/>} color="violet-bg" foot={`${stats.monthIncomeCount} transaksi`}/>
+            <Stat title="Pengeluaran bulan ini" value={money(stats.monthExpense)} icon={<ArrowUpRight size={18}/>} color="pink-bg" foot={`${stats.monthExpenseCount} transaksi · tanpa tabungan`}/>
+            <Stat title="Sisa anggaran belanja" value={money(budgetLeft)} icon={<Target size={18}/>} color="amber-bg" foot={<button className="stat-link" onClick={() => setDialog({ type: "finance" })} title="Batas belanja bulanan dikurangi pengeluaran bulan ini">Batas {money(stats.monthlyBudget)}/bulan · ubah</button>}/>
+          </section>
           <section className="content-grid finance-detail"><FinanceChart chart={data.chart}/>
             <article className="panel glass-panel budget-panel"><div className="eyebrow">ANGGARAN BULANAN · {budgetPct}%</div><h2>Pengeluaran per kategori</h2>
               {data.categories.length === 0 ? <p className="empty-state">Belum ada pengeluaran bulan ini.</p> : data.categories.map((item) => <div className="budget-row" key={item.category}><div><span>{item.category}</span><small>{money(item.total)}</small></div><div className="progress-track"><span style={{ width: `${pct(item.total, Math.max(stats.monthlyBudget, stats.monthExpense))}%` }}/></div></div>)}
-              <button className="text-link budget-edit" onClick={() => selectPage("Pengaturan")}>Ubah anggaran <ArrowUpRight size={13}/></button>
+              <div className="budget-actions"><button className="text-link budget-edit" onClick={() => setDialog({ type: "finance" })}>Ubah anggaran <ArrowUpRight size={13}/></button><button className="text-link budget-edit" onClick={() => setDialog({ type: "categories" })}><Tags size={13}/> Kelola kategori</button></div>
             </article>
           </section>
           <TransactionsCard transactions={data.transactions} tz={timezone} today={today} expanded onEdit={(item) => setDialog({ type: "transaction", item })} onDelete={deleteTx}/>
@@ -373,7 +382,9 @@ export function Dashboard() {
       <div style={{ marginTop: 16 }}><ThemePicker value={pageTheme} onChange={(v) => setMenuTheme(active, v ?? "none")}/></div>
     </section></div>}
 
-    {dialog && dialog.type !== "theme" && <FormDialog dialog={dialog} data={data} busy={busy} onClose={() => setDialog(null)} onSubmit={async (fn, msg) => { if (await mutate(fn, msg)) { setDialog(null); setRoutineVersion((v) => v + 1) } }}/>}
+    {dialog?.type === "categories" && <CategoriesDialog data={data} onClose={() => setDialog(null)} onChanged={load} toast={toast}/>}
+
+    {dialog && dialog.type !== "theme" && dialog.type !== "categories" && <FormDialog dialog={dialog} data={data} busy={busy} onClose={() => setDialog(null)} onSubmit={async (fn, msg) => { if (await mutate(fn, msg)) { setDialog(null); setRoutineVersion((v) => v + 1) } }}/>}
 
     <div className="toast-stack" aria-live="polite">{toasts.map((t) => <div key={t.id} className="toast glass-panel"><img src="/icons/icon-192.png" alt="" width={34} height={34}/><span><strong>{t.title}</strong>{t.body && <small>{t.body}</small>}</span><button aria-label="Tutup" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}><X size={14}/></button></div>)}</div>
   </main>
@@ -388,7 +399,7 @@ function PushCard({ push, busy, onToggle, compact = false }: { push: { env: Push
   return <div className="reminder-banner glass-panel"><span className="reminder-icon"><Bell size={18}/></span><span><strong>Nyalakan notifikasi</strong><small>Pengingat akan muncul di layar HP walau aplikasi sedang ditutup.</small></span><button className="primary-button" disabled={busy} onClick={onToggle}>Aktifkan</button></div>
 }
 
-function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude<NonNullable<Dialog>, { type: "theme" }>; data: DashboardData; busy: boolean; onClose: () => void; onSubmit: (fn: () => Promise<unknown>, msg: string) => void }) {
+function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude<NonNullable<Dialog>, { type: "theme" } | { type: "categories" }>; data: DashboardData; busy: boolean; onClose: () => void; onSubmit: (fn: () => Promise<unknown>, msg: string) => void }) {
   const tx = dialog.type === "transaction" ? dialog.item : undefined
   const goalItem = dialog.type === "goal" ? dialog.item : undefined
   const sched = dialog.type === "schedule" ? dialog.item : undefined
@@ -403,6 +414,7 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
   const [progress, setProgress] = useState(goalItem?.progress ?? 0)
   const [error, setError] = useState("")
   const [repeatDays, setRepeatDays] = useState<number[]>([])
+  const [newCategory, setNewCategory] = useState(false)
   const now = new Intl.DateTimeFormat("en-GB", { timeZone: data.timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(Date.now() + 15 * 60_000))
   const goal = dialog.type === "saving" ? data.goals.find((g) => g.id === dialog.goalId) ?? data.goals.find((g) => g.kind === "money") : undefined
   const moneyGoals = data.goals.filter((g) => g.kind === "money")
@@ -417,6 +429,7 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
     reminder: [rem ? "Ubah pengingat" : "Buat pengingat", "Akan dikirim sebagai notifikasi di HP-mu."],
     routine: ["Ubah rutinitas", `Setiap ${routine ? WEEKDAYS[routine.weekday] : ""}. Agenda minggu-minggu berikutnya ikut berubah.`],
     password: ["Ganti kata sandi", "Semua perangkat lain akan otomatis keluar."],
+    finance: ["Saldo & anggaran", "Atur titik awal keuanganmu dan batas belanja bulanan."],
   }
   const [title, desc] = titles[dialog.type]
 
@@ -427,7 +440,13 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
     const remindVal = f.remind === undefined ? undefined : f.remind === "" ? null : Number(f.remind)
     switch (dialog.type) {
       case "transaction": {
-        const body = { name: f.name, amount: Number(f.amount), kind, category: f.category, date: f.date, time: f.time }
+        const category = newCategory ? f.newCategory?.trim() : f.category
+        if (newCategory && !category) return setError("Nama kategori baru wajib diisi.")
+        const body = { name: f.name, amount: Number(f.amount), kind, category, date: f.date, time: f.time }
+        if (newCategory) {
+          const save = async () => { await api("/api/categories", { body: { kind, name: category } }); return tx ? api(`/api/transactions/${tx.id}`, { method: "PATCH", body }) : api("/api/transactions", { body }) }
+          return onSubmit(save, `Kategori “${category}” dibuat & transaksi tersimpan`)
+        }
         return tx ? onSubmit(() => api(`/api/transactions/${tx.id}`, { method: "PATCH", body }), "Transaksi diperbarui") : onSubmit(() => api("/api/transactions", { body }), "Transaksi tersimpan")
       }
       case "saving": {
@@ -459,6 +478,8 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
         const body = { title: f.title, detail: f.detail, date: f.date, time: f.time, repeat: f.repeat, icon: f.icon, color: f.color }
         return rem ? onSubmit(() => api(`/api/reminders/${rem.id}`, { method: "PATCH", body }), "Pengingat diperbarui") : onSubmit(() => api("/api/reminders", { body }), "Pengingat dibuat")
       }
+      case "finance":
+        return onSubmit(() => api("/api/settings", { method: "PATCH", body: { openingBalance: Number(f.openingBalance || 0), monthlyBudget: Number(f.monthlyBudget || 0) } }), "Saldo & anggaran disimpan")
       case "password":
         if (f.newPassword !== f.confirm) return setError("Konfirmasi kata sandi tidak sama.")
         return onSubmit(() => api("/api/settings/password", { body: { currentPassword: f.currentPassword, newPassword: f.newPassword } }), "Kata sandi diganti")
@@ -479,7 +500,18 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
           {!isSavingTx && <div className="kind-switch"><button type="button" className={kind === "expense" ? "kind-active" : ""} onClick={() => setKind("expense")}>Pengeluaran</button><button type="button" className={kind === "income" ? "kind-active" : ""} onClick={() => setKind("income")}>Pemasukan</button></div>}
           <label htmlFor="f-name">Nama transaksi</label><input id="f-name" name="name" autoFocus maxLength={80} defaultValue={tx?.name} placeholder={kind === "income" ? "Contoh: Uang saku" : "Contoh: Kopi susu"} required/>
           <label htmlFor="f-amount">Jumlah (Rupiah)</label><input id="f-amount" name="amount" type="number" inputMode="numeric" min="1" defaultValue={tx ? Math.abs(tx.amount) : undefined} placeholder="50000" required/>
-          {!isSavingTx && <><label htmlFor="f-cat">Kategori</label><select id="f-cat" name="category" key={kind} defaultValue={tx?.category}>{(kind === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).concat(tx && ![...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES].includes(tx.category) ? [tx.category] : []).map((c) => <option key={c}>{c}</option>)}</select></>}
+          {!isSavingTx && (() => {
+            const custom = data.customCategories.filter((c) => c.kind === kind).map((c) => c.name)
+            const base = kind === "income" ? DEFAULT_INCOME_CATEGORIES : DEFAULT_EXPENSE_CATEGORIES
+            const options = [...base, ...custom]
+            if (tx && !options.includes(tx.category)) options.push(tx.category)
+            return <><label htmlFor="f-cat">Kategori</label>
+              <select id="f-cat" name="category" key={kind} defaultValue={tx?.category} onChange={(e) => setNewCategory(e.target.value === "__new")}>
+                {options.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="__new">＋ Tambah kategori baru…</option>
+              </select>
+              {newCategory && <input name="newCategory" maxLength={40} autoFocus placeholder={kind === "income" ? "Contoh: Freelance" : "Contoh: Kos, Skincare"} aria-label="Nama kategori baru"/>}</>
+          })()}
           <div className="form-row"><span><label htmlFor="f-date">Tanggal</label><input id="f-date" name="date" type="date" defaultValue={txLocal?.day ?? data.today} max={data.today} required/></span><span><label htmlFor="f-time">Jam</label><input id="f-time" name="time" type="time" defaultValue={txLocal?.time ?? localParts(new Date().toISOString(), data.timezone).time} required/></span></div>
         </>}
         {dialog.type === "saving" && <>
@@ -528,6 +560,14 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
           {colorSelect(rem?.color)}
           {iconField(rem?.icon ?? "bell")}
         </>}
+        {dialog.type === "finance" && <>
+          <label htmlFor="f-opening">Saldo awal / tabungan yang sudah kamu punya (Rupiah)</label>
+          <input id="f-opening" name="openingBalance" type="number" inputMode="numeric" step="1" defaultValue={data.stats.openingBalance || ""} placeholder="Contoh: 3500000" autoFocus/>
+          <small className="form-hint">Isi total uang yang kamu punya saat mulai memakai mellow (tabungan, rekening, dompet). Ini jadi titik awal <b>Total saldo</b>, tidak dihitung sebagai pemasukan bulan ini.</small>
+          <label htmlFor="f-budget">Batas belanja per bulan (Rupiah)</label>
+          <input id="f-budget" name="monthlyBudget" type="number" inputMode="numeric" min="0" step="1000" defaultValue={data.stats.monthlyBudget} required/>
+          <small className="form-hint"><b>Sisa anggaran belanja</b> = batas ini − pengeluaran bulan ini (setoran tabungan tidak dihitung). Mulai lagi dari penuh setiap tanggal 1.</small>
+        </>}
         {dialog.type === "password" && <>
           <label htmlFor="f-cur">Kata sandi saat ini</label><input id="f-cur" name="currentPassword" type="password" autoComplete="current-password" required/>
           <label htmlFor="f-new">Kata sandi baru</label><input id="f-new" name="newPassword" type="password" autoComplete="new-password" minLength={10} required/>
@@ -542,7 +582,7 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: Exclude
 }
 
 function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) { return <div className="greeting-row page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p className="page-subtitle">{description}</p></div>{action}</div> }
-function Stat({ title, value, icon, color, foot = "Ringkasan bulan ini" }: { title: string; value: string; icon: React.ReactNode; color: string; foot?: string }) { return <article className="stat-card glass-panel"><div className="stat-top"><span>{title}</span><span className={`stat-icon ${color}`}>{icon}</span></div><strong className="stat-value">{value}</strong><div className="stat-foot"><span className="soft-text">{foot}</span></div></article> }
+function Stat({ title, value, icon, color, foot = "Ringkasan bulan ini" }: { title: string; value: string; icon: React.ReactNode; color: string; foot?: React.ReactNode }) { return <article className="stat-card glass-panel"><div className="stat-top"><span>{title}</span><span className={`stat-icon ${color}`}>{icon}</span></div><strong className="stat-value">{value}</strong><div className="stat-foot"><span className="soft-text">{foot}</span></div></article> }
 
 function WeekStrip({ days, selected, today, onSelect }: { days: string[]; selected: string; today: string; onSelect: (d: string) => void }) {
   return <div className="week-strip">{days.map((d) => <button key={d} onClick={() => onSelect(d)} className={`day-pill ${d === selected ? "day-active" : ""}`} aria-label={dayLabel(d, { weekday: "long", day: "numeric", month: "long" })} aria-pressed={d === selected}><span>{dayLabel(d, { weekday: "short" }).replace(".", "")}</span><strong>{Number(d.slice(8))}</strong>{d === today && <i/>}</button>)}</div>
@@ -640,4 +680,35 @@ function TransactionsCard({ transactions, tz, today, onSeeAll, onEdit, onDelete,
         return <div className="transaction" key={item.id}><span className={`transaction-icon ${item.amount > 0 ? "mint" : item.goalId ? "pink" : index % 2 ? "violet" : "amber"}`}>{item.amount > 0 ? <ArrowDownLeft size={17}/> : item.goalId ? <Target size={17}/> : <CreditCard size={17}/>}</span><span className="transaction-name"><strong>{item.name}</strong><small>{w.day} · {w.time} · {item.category}</small></span><strong className={`transaction-amount ${item.amount > 0 ? "income" : ""}`}>{item.amount > 0 ? "+ " : "− "}{money(item.amount)}</strong>
           {(onEdit || onDelete) && <span className="row-actions">{onEdit && <button className="mini-edit" aria-label={`Ubah ${item.name}`} onClick={() => onEdit(item)}><Pencil size={13}/></button>}{onDelete && <button className="mini-delete" aria-label={`Hapus ${item.name}`} onClick={() => onDelete(item)}><Trash2 size={13}/></button>}</span>}</div> })}</div>}
     {!expanded && onSeeAll && <button className="all-activity" onClick={onSeeAll}>Semua aktivitas <ArrowUpRight size={14}/></button>}</article>
+}
+
+function OpeningHint({ onOpen }: { onOpen: () => void }) {
+  return <button className="reminder-banner glass-panel opening-hint" onClick={onOpen}><span className="reminder-icon"><Info size={18}/></span><span><strong>Masukkan saldo / tabunganmu dulu</strong><small>Total saldo masih minus karena uang yang sudah kamu punya belum dicatat. Isi saldo awal supaya angkanya sesuai kenyataan.</small></span><ChevronRight size={16}/></button>
+}
+
+function CategoriesDialog({ data, onClose, onChanged, toast }: { data: DashboardData; onClose: () => void; onChanged: () => Promise<void> | void; toast: (t: string, b?: string) => void }) {
+  const [kind, setKind] = useState<"expense" | "income">("expense")
+  const [name, setName] = useState("")
+  const [busy, setBusy] = useState(false)
+  const custom = data.customCategories.filter((c) => c.kind === kind)
+  const base = kind === "expense" ? DEFAULT_EXPENSE_CATEGORIES : DEFAULT_INCOME_CATEGORIES
+  const run = async (fn: () => Promise<unknown>, msg: string) => { setBusy(true); try { await fn(); toast(msg); await onChanged() } catch (e) { toast("Gagal", (e as Error).message) } finally { setBusy(false) } }
+  return <div className="dialog-scrim" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}><section className="dialog-card glass-panel" role="dialog" aria-modal="true" aria-labelledby="cat-title">
+    <button className="dialog-close" aria-label="Tutup" onClick={onClose}><X size={18}/></button>
+    <div className="eyebrow"><Tags size={11}/> KATEGORI</div><h2 id="cat-title">Kelola kategori</h2><p>Kategori bawaan tidak bisa dihapus. Kategori buatanmu bisa diubah namanya atau dihapus.</p>
+    <div className="transaction-form">
+      <div className="kind-switch"><button type="button" className={kind === "expense" ? "kind-active" : ""} onClick={() => setKind("expense")}>Pengeluaran</button><button type="button" className={kind === "income" ? "kind-active" : ""} onClick={() => setKind("income")}>Pemasukan</button></div>
+      <form className="search-row" onSubmit={(e) => { e.preventDefault(); if (!name.trim()) return; run(() => api("/api/categories", { body: { kind, name: name.trim() } }), `Kategori “${name.trim()}” ditambahkan`).then(() => setName("")) }}>
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={kind === "expense" ? "Kategori baru, mis. Kos" : "Kategori baru, mis. Freelance"} aria-label="Nama kategori baru"/>
+        <button className="secondary-button" type="submit" disabled={busy}><Plus size={14}/></button>
+      </form>
+      <div className="category-list">
+        {custom.map((c) => <div key={c.id} className="category-row"><span>{c.name}</span><span className="row-actions">
+          <button className="mini-edit" aria-label={`Ubah ${c.name}`} onClick={() => { const n = prompt("Nama baru kategori:", c.name)?.trim(); if (n && n !== c.name) run(() => api("/api/categories", { method: "PATCH", body: { id: c.id, name: n } }), "Kategori diubah") }}><Pencil size={13}/></button>
+          <button className="mini-delete" aria-label={`Hapus ${c.name}`} onClick={() => confirm(`Hapus kategori “${c.name}”? Transaksi lama tetap menyimpan nama kategorinya.`) && run(() => api("/api/categories", { method: "DELETE", body: { id: c.id } }), "Kategori dihapus")}><Trash2 size={13}/></button>
+        </span></div>)}
+        {base.map((c) => <div key={c} className="category-row builtin"><span>{c}</span><small>bawaan</small></div>)}
+      </div>
+    </div>
+  </section></div>
 }

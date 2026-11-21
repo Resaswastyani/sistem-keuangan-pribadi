@@ -6,6 +6,8 @@ import { sql } from "@/lib/db"
 const schema = z.object({
   displayName: z.string().trim().min(1).max(40).optional(),
   monthlyBudget: z.coerce.number().int().min(0).max(1_000_000_000_000).optional(),
+  // Saldo/tabungan yang sudah dimiliki sebelum mulai mencatat di mellow.
+  openingBalance: z.coerce.number().int().min(-1_000_000_000_000).max(1_000_000_000_000).optional(),
   // Tema animasi kartu per menu, mis. { "Target": "rain", "Keuangan": "money" }
   cardThemes: z.partialRecord(z.enum(MENU_KEYS), z.enum(CARD_THEME_KEYS)).optional(),
 })
@@ -16,6 +18,7 @@ export const PATCH = withUser(async (req, { user }) => {
     update users set
       display_name = coalesce(${s.displayName ?? null}, display_name),
       monthly_budget = coalesce(${s.monthlyBudget ?? null}::bigint, monthly_budget),
+      opening_balance = coalesce(${s.openingBalance ?? null}::bigint, opening_balance),
       card_themes = case when ${s.cardThemes !== undefined} then card_themes || ${JSON.stringify(s.cardThemes ?? {})}::jsonb else card_themes end,
       updated_at = now()
     where id = ${user.id}`

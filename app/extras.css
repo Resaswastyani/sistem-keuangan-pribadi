@@ -63,3 +63,15 @@
   .mini-edit { opacity: .55; }
 }
 .kind-switch button { display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ===== Saldo awal & kategori ===== */
+.stat-link { padding: 0; border: 0; background: none; color: #f1bfd1; font-size: inherit; cursor: pointer; text-align: left; text-decoration: underline dotted; text-underline-offset: 3px; }
+.opening-hint { width: 100%; margin: 0 0 16px; text-align: left; color: inherit; font: inherit; cursor: pointer; border: 1px solid rgba(243,215,126,.25) !important; }
+.opening-hint .reminder-icon { color: #f3d77e; }
+.opening-hint > svg:last-child { margin-left: auto; opacity: .6; }
+.budget-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+.category-list { display: grid; gap: 2px; max-height: 300px; overflow-y: auto; }
+.category-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 11px; }
+.category-row.builtin { color: #a99ea6; }
+.category-row small { font-size: 8.5px; color: #8f858c; }
+.app-shell[data-theme="light"] .stat-link { color: #b4517d; }

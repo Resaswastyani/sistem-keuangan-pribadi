@@ -32,8 +32,9 @@ export type DashboardData = {
   cardThemes: Record<string, string>
   day: string
   timezone: string
-  stats: { balance: number; balanceChangePct: number | null; monthIncome: number; monthIncomeCount: number; monthExpense: number; monthExpenseCount: number; monthlyBudget: number }
+  stats: { balance: number; balanceChangePct: number | null; monthIncome: number; monthIncomeCount: number; monthExpense: number; monthExpenseCount: number; monthlyBudget: number; openingBalance: number }
   categories: { category: string; total: number }[]
+  customCategories: { id: string; kind: "expense" | "income"; name: string }[]
   chart: { day: string; income: number; expense: number }[]
   transactions: { id: string; name: string; category: string; amount: number; goalId: string | null; occurredAt: string }[]
   goals: { id: string; kind: "money" | "achievement"; title: string; note: string; targetAmount: number | null; savedAmount: number; progressMode: "percent" | "checklist"; progress: number; milestones: { id: string; text: string; done: boolean }[]; achievedAt: string | null; theme: string | null; deadline: string | null; color: string; icon: string }[]

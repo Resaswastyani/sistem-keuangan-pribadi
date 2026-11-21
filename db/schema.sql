@@ -203,3 +203,14 @@ alter table goals drop constraint if exists goals_target_amount_check;
 alter table goals drop constraint if exists goals_target_amount_chk;
 alter table goals add constraint goals_target_amount_chk check (target_amount is null or target_amount > 0);
 alter table users add column if not exists card_themes jsonb not null default '{}'::jsonb;
+
+-- ===== Kategori transaksi custom & saldo awal =====
+create table if not exists categories (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references users(id) on delete cascade,
+  kind       text not null check (kind in ('expense','income')),
+  name       text not null check (char_length(name) between 1 and 40),
+  created_at timestamptz not null default now()
+);
+create unique index if not exists categories_user_kind_name_uq on categories (user_id, kind, lower(name));
+alter table users add column if not exists opening_balance bigint not null default 0;

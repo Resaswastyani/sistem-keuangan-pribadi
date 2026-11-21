@@ -10,11 +10,13 @@ export const GET = withUser(async (req, { user }) => {
   const url = new URL(req.url)
   const requestedDay = dayParam.parse(url.searchParams.get("day") ?? undefined)
 
-  const [{ today, card_themes }] = await sql`select to_char(now() at time zone ${APP_TZ}, 'YYYY-MM-DD') as today, (select card_themes from users where id = ${user.id}) as card_themes`
+  const [{ today, card_themes, opening_balance }] = await sql`select to_char(now() at time zone ${APP_TZ}, 'YYYY-MM-DD') as today, (select card_themes from users where id = ${user.id}) as card_themes,
+    (select opening_balance from users where id = ${user.id}) as opening_balance`
   const day = requestedDay ?? today
   await materializeRoutines(day, user.id)
 
-  const [stats, categories, chart, transactions, goals, schedule, reminders, notifications, unread] = await Promise.all([
+  const [customCategories, stats, categories, chart, transactions, goals, schedule, reminders, notifications, unread] = await Promise.all([
+    sql`select id, kind, name from categories where user_id = ${user.id} order by created_at`,
     sql`
       with b as (
         select
@@ -66,8 +68,9 @@ export const GET = withUser(async (req, { user }) => {
 
   const s = stats[0]
   const num = (v: unknown) => Number(v ?? 0)
-  const balance = num(s.balance)
-  const start = num(s.balance_month_start)
+  const opening = num(opening_balance)
+  const balance = opening + num(s.balance)
+  const start = opening + num(s.balance_month_start)
 
   return json({
     user,
@@ -83,7 +86,9 @@ export const GET = withUser(async (req, { user }) => {
       monthExpense: num(s.month_expense),
       monthExpenseCount: num(s.month_expense_count),
       monthlyBudget: user.monthlyBudget,
+      openingBalance: opening,
     },
+    customCategories: customCategories.map((c) => ({ id: c.id, kind: c.kind, name: c.name })),
     categories: categories.map((c) => ({ category: c.category, total: num(c.total) })),
     chart: chart.map((c) => ({ day: c.day, income: num(c.income), expense: num(c.expense) })),
     transactions: transactions.map((t) => ({ id: t.id, name: t.name, category: t.category, amount: num(t.amount), goalId: t.goal_id, occurredAt: t.occurred_at })),
