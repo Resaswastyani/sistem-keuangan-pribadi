@@ -27,6 +27,12 @@ export async function proxy(req: NextRequest) {
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value)
 
   if (pathname === "/login") {
+    // ?expired=1 = server menolak sesi ini (dicabut / ganti password) → hapus cookie, tampilkan form login.
+    if (req.nextUrl.searchParams.has("expired")) {
+      const res = NextResponse.next()
+      res.cookies.delete(SESSION_COOKIE)
+      return res
+    }
     return session ? NextResponse.redirect(new URL("/", req.url)) : NextResponse.next()
   }
   if (!session) {

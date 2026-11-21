@@ -185,3 +185,8 @@ create index if not exists routines_user_idx on routines (user_id, weekday, star
 alter table schedule_items add column if not exists routine_id uuid references routines(id) on delete cascade;
 alter table schedule_items add column if not exists hidden boolean not null default false;
 create unique index if not exists schedule_routine_day_uq on schedule_items (routine_id, day);
+
+-- Pesan & on/off notifikasi per rutinitas
+alter table routines add column if not exists remind_enabled boolean not null default true;
+alter table routines add column if not exists notify_title text check (char_length(notify_title) <= 120);
+alter table routines add column if not exists notify_body text check (char_length(notify_body) <= 300);

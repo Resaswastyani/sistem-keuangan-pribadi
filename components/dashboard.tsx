@@ -6,6 +6,7 @@ import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, BookOpen, Calen
 import { api, type DashboardData } from "@/lib/client-api"
 import { IbadahPage, NextPrayerMini, NotificationPrefs } from "@/components/ibadah"
 import { RoutinesPanel, WEEKDAYS } from "@/components/routines"
+import { RoutineNotifs } from "@/components/routine-notifs"
 import { currentSubscription, disablePush, enablePush, pushEnv, registerServiceWorker, type PushEnv } from "@/lib/push-client"
 
 type Tab = "Ringkasan" | "Keuangan" | "Ibadah" | "Jadwal" | "Target" | "Pengingat" | "Pengaturan"
@@ -65,6 +66,7 @@ export function Dashboard() {
   const [push, setPush] = useState<{ env: PushEnv; subscribed: boolean }>({ env: { supported: false, ios: false, standalone: false, permission: "unsupported", needsInstall: false }, subscribed: false })
   const [busy, setBusy] = useState(false)
   const [routineVersion, setRoutineVersion] = useState(0)
+  const [remTab, setRemTab] = useState<"semua" | "ibadah" | "jadwal" | "buatan" | "lainnya">("semua")
   const dayRef = useRef<string | null>(null)
   dayRef.current = day
 
@@ -266,12 +268,19 @@ export function Dashboard() {
         </>}
 
         {active === "Pengingat" && <>
-          <PageHeading eyebrow="WAKTUNYA NANTI, BUKAN TERLUPA" title="Pengingat" description="Pengingat lembut yang muncul sebagai notifikasi di HP-mu." action={<button className="primary-button" onClick={() => setDialog({ type: "reminder" })}><Plus size={17}/> Buat pengingat</button>}/>
+          <PageHeading eyebrow="WAKTUNYA NANTI, BUKAN TERLUPA" title="Pengingat" description="Semua notifikasi di satu tempat: sholat, puasa, jadwal, dan pengingat buatanmu. Ubah isi pesannya dan nyalakan atau matikan sesukamu." action={<button className="primary-button" onClick={() => setDialog({ type: "reminder" })}><Plus size={17}/> Buat pengingat</button>}/>
           {!push.subscribed && <PushCard push={push} busy={busy} onToggle={togglePush}/>}
+          <div className="rem-tabs" role="tablist">{([["semua", "Semua"], ["ibadah", "Sholat & puasa"], ["jadwal", "Jadwal rutin"], ["buatan", "Buatanku"], ["lainnya", "Lainnya"]] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={remTab === k} className={remTab === k ? "active" : ""} onClick={() => setRemTab(k)}>{l}</button>)}</div>
+          {(remTab === "semua" || remTab === "ibadah") && <NotificationPrefs groups={["sholat", "puasa"]} toast={toast} title="Sholat & puasa"/>}
+          {(remTab === "semua" || remTab === "jadwal") && <RoutineNotifs toast={toast}/>}
+          {(remTab === "semua" || remTab === "buatan") && <>
+          <div className="rem-section-head"><div><div className="eyebrow">PENGINGAT BUATANMU</div><h2>Pengingat custom</h2></div><button className="text-link" onClick={() => setDialog({ type: "reminder" })}><Plus size={13}/> Tambah</button></div>
           <section className="reminder-list">
             {data.reminders.length === 0 && <article className="panel glass-panel empty-state">Belum ada pengingat. Tekan “Buat pengingat” untuk menambahkan.</article>}
             {data.reminders.map((item) => { const Icon = ICONS[item.icon] ?? Bell; const w = whenLabel(item.remindAt, timezone, today); return <article className={`panel glass-panel reminder-row ${item.done ? "is-done" : ""}`} key={item.id}><span className={`timeline-icon ${item.color}`}><Icon size={18}/></span><span className="reminder-copy"><strong>{item.title}</strong><small>{item.detail || REPEAT_LABEL[item.repeat]}{item.detail && item.repeat !== "none" ? ` · ${REPEAT_LABEL[item.repeat]}` : ""}</small></span><span className="reminder-when">{w.day}</span><strong className="reminder-at">{w.time}</strong><button className="mini-delete" aria-label={`Hapus ${item.title}`} onClick={() => mutate(() => api(`/api/reminders/${item.id}`, { method: "DELETE" }), "Pengingat dihapus")}><Trash2 size={14}/></button><button className={`check-button ${item.done ? "completed" : ""}`} aria-label={item.done ? `Aktifkan lagi ${item.title}` : `Tandai ${item.title} selesai`} onClick={() => mutate(() => api(`/api/reminders/${item.id}`, { method: "PATCH", body: { done: !item.done } }))}>{item.done ? <Check size={14}/> : <span/>}</button></article> })}
           </section>
+          </>}
+          {(remTab === "semua" || remTab === "lainnya") && <NotificationPrefs groups={["lainnya"]} toast={toast} title="Ringkasan, anggaran & agenda"/>}
         </>}
 
         {active === "Pengaturan" && <>

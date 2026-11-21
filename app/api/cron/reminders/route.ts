@@ -80,12 +80,15 @@ async function run(req: Request) {
       from due where s.id = due.id
       returning s.id, s.user_id, s.title, s.detail, to_char(s.start_time, 'HH24:MI') as start,
         ceil(extract(epoch from ((s.day + s.start_time) at time zone ${APP_TZ}) - now()) / 60)::int as mins_left,
-        (select display_name from users where id = s.user_id) as display_name`
+        (select display_name from users where id = s.user_id) as display_name,
+        (select notify_title from routines where id = s.routine_id) as notify_title,
+        (select notify_body from routines where id = s.routine_id) as notify_body`
 
     for (const s of items) {
       const p = (await getPrefs(s.user_id)).find((x) => x.key === "schedule") as EffectivePref
       if (!p.enabled) continue
-      const msg = renderPref(p, { nama: s.display_name, judul: s.title, waktu: s.start, sisa: sisaLabel(s.mins_left), detail: s.detail })
+      // Pesan custom milik rutinitas (kalau ada) mengalahkan template agenda umum.
+      const msg = renderPref({ ...p, customTitle: s.notify_title ?? p.customTitle, customBody: s.notify_body ?? p.customBody }, { nama: s.display_name, judul: s.title, waktu: s.start, sisa: sisaLabel(s.mins_left), detail: s.detail })
       const { sent } = await notifyUser(s.user_id, { kind: "schedule", ...msg, url: "/?tab=Jadwal", tag: `schedule-${s.id}` })
       result.schedule++
       result.pushed += sent

@@ -16,7 +16,7 @@ export async function api<T = unknown>(path: string, init: { method?: string; bo
   })
   const data = await res.json().catch(() => ({}))
   if (res.status === 401 && !path.startsWith("/api/auth/login")) {
-    window.location.href = "/login"
+    window.location.href = "/login?expired=1"
     throw new ApiError(401, "Sesi berakhir")
   }
   if (!res.ok) {

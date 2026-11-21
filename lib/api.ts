@@ -1,7 +1,7 @@
 import "server-only"
 import { NextResponse } from "next/server"
 import { z, ZodError } from "zod"
-import { clearSessionCookie, getSessionUser, type SessionUser } from "./auth"
+import { getSessionUser, type SessionUser } from "./auth"
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -19,11 +19,9 @@ export function withUser<C = object>(handler: Handler<C>) {
   return async (req: Request, ctx: C) => {
     try {
       const user = await getSessionUser()
-      if (!user) {
-        // Hapus cookie yang sudah dicabut, supaya proxy tidak lagi mengarahkan /login → / (loop).
-        await clearSessionCookie()
-        return json({ error: "Sesi berakhir, silakan masuk lagi." }, { status: 401 })
-      }
+      // Cookie yang dicabut dihapus oleh proxy saat client membuka /login?expired=1 (bukan di sini,
+      // supaya respons 401 yang datang terlambat tidak menghapus cookie login yang baru).
+      if (!user) return json({ error: "Sesi berakhir, silakan masuk lagi." }, { status: 401 })
       return await handler(req, { ...ctx, user })
     } catch (error) {
       return handleError(error)
