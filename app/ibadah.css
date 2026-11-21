@@ -107,3 +107,22 @@
   .recap-grid { grid-template-columns: repeat(2,1fr); }
   .mobile-nav button span { font-size: 7.5px; }
 }
+
+/* ===== Rutinitas mingguan ===== */
+.routines-panel { margin-top: 15px; }
+.weekday-tabs { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin: 6px 0 10px; }
+.weekday-tabs button { position: relative; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: inherit; font-size: 10px; cursor: pointer; }
+.weekday-tabs button.active { border-color: rgba(241,168,197,.45); background: rgba(241,168,197,.15); color: #f6c5d8; }
+.weekday-tabs i { position: absolute; top: -5px; right: -3px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: #e99cbb; color: #2b1822; font-size: 8px; font-style: normal; font-weight: 700; display: grid; place-items: center; }
+.routine-list { display: grid; }
+.routine-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.routine-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #e99cbb; }
+.routine-dot.violet { background: #c9a8e8; } .routine-dot.mint { background: #a6d6b3; } .routine-dot.amber { background: #f3d77e; }
+.routine-time { font-size: 10px; color: #b9aeb5; font-variant-numeric: tabular-nums; width: 78px; flex: none; }
+.routine-copy { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.routine-copy strong { font-size: 10.5px; } .routine-copy small { font-size: 9px; color: #a99ea6; }
+.routine-bell { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; color: #a99ea6; }
+.weekday-pick { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+.weekday-pick button { height: 32px; border-radius: 9px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); color: #aaa0a6; font-size: 9.5px; cursor: pointer; }
+.weekday-pick button.on { border-color: rgba(230,160,191,.45); background: rgba(230,160,191,.14); color: #f1bfd1; }
+.app-shell[data-theme="light"] .weekday-tabs button, .app-shell[data-theme="light"] .weekday-pick button { border-color: rgba(183,132,158,.2); color: #6d5a67; }

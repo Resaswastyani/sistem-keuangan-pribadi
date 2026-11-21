@@ -32,6 +32,9 @@ export const PATCH = withUser<Ctx>(async (req, { user, params }) => {
 
 export const DELETE = withUser<Ctx>(async (_req, { user, params }) => {
   const id = uuid.parse((await params).id)
+  // Agenda dari rutinitas cukup disembunyikan untuk hari itu (kalau dihapus, akan dibuat ulang otomatis).
+  const [hidden] = await sql`update schedule_items set hidden = true where id = ${id} and user_id = ${user.id} and routine_id is not null returning id`
+  if (hidden) return json({ ok: true, skipped: true })
   const [row] = await sql`delete from schedule_items where id = ${id} and user_id = ${user.id} returning id`
   if (!row) throw new HttpError(404, "Kegiatan tidak ditemukan.")
   return json({ ok: true })

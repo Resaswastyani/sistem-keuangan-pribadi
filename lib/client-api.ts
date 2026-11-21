@@ -36,7 +36,7 @@ export type DashboardData = {
   chart: { day: string; income: number; expense: number }[]
   transactions: { id: string; name: string; category: string; amount: number; goalId: string | null; occurredAt: string }[]
   goals: { id: string; title: string; note: string; targetAmount: number; savedAmount: number; deadline: string | null; color: string; icon: string }[]
-  schedule: { id: string; day: string; startTime: string; endTime: string; title: string; detail: string; icon: string; color: string; done: boolean; remindBeforeMin: number | null }[]
+  schedule: { id: string; day: string; startTime: string; endTime: string; title: string; detail: string; icon: string; color: string; done: boolean; remindBeforeMin: number | null; routineId: string | null }[]
   reminders: { id: string; title: string; detail: string; icon: string; color: string; remindAt: string; repeat: "none" | "daily" | "weekly" | "monthly"; done: boolean }[]
   notifications: { id: string; kind: string; title: string; body: string; url: string; readAt: string | null; createdAt: string }[]
   unreadCount: number

@@ -3,7 +3,8 @@ import { handleError, json } from "@/lib/api"
 import { APP_TZ, sql } from "@/lib/db"
 import { notifyUser } from "@/lib/notify"
 import { renderPref, sisaLabel, type EffectivePref } from "@/lib/notification-prefs"
-import { getPrefs } from "@/lib/prefs-server"
+import { getPrefs, localNow } from "@/lib/prefs-server"
+import { materializeRoutines } from "@/lib/routines"
 import { runBudget, runDigest, runIbadah } from "@/lib/scheduled"
 
 export const dynamic = "force-dynamic"
@@ -64,11 +65,12 @@ async function run(req: Request) {
       result.pushed += sent
     }
 
-    // 2) Agenda harian yang punya "ingatkan X menit sebelum".
+    // 2) Agenda harian yang punya "ingatkan X menit sebelum" (rutinitas mingguan disalin dulu ke hari ini).
+    await materializeRoutines(localNow(APP_TZ).day)
     const items = await sql`
       with due as (
         select id from schedule_items
-        where done = false and reminded_at is null and remind_before_min is not null
+        where done = false and hidden = false and reminded_at is null and remind_before_min is not null
           and ((day + start_time) at time zone ${APP_TZ}) - make_interval(mins => remind_before_min) <= now()
           and ((day + start_time) at time zone ${APP_TZ}) > now() - interval '2 hours'
         limit 200

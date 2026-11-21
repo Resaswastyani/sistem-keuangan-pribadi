@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { json, withUser } from "@/lib/api"
 import { APP_TZ, sql } from "@/lib/db"
+import { materializeRoutines } from "@/lib/routines"
 
 const dayParam = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
 
@@ -11,6 +12,7 @@ export const GET = withUser(async (req, { user }) => {
 
   const [{ today }] = await sql`select to_char(now() at time zone ${APP_TZ}, 'YYYY-MM-DD') as today`
   const day = requestedDay ?? today
+  await materializeRoutines(day, user.id)
 
   const [stats, categories, chart, transactions, goals, schedule, reminders, notifications, unread] = await Promise.all([
     sql`
@@ -49,8 +51,8 @@ export const GET = withUser(async (req, { user }) => {
       from goals where user_id = ${user.id} order by created_at`,
     sql`
       select id, to_char(day, 'YYYY-MM-DD') as day, to_char(start_time, 'HH24:MI') as start_time, to_char(end_time, 'HH24:MI') as end_time,
-        title, detail, icon, color, done, remind_before_min
-      from schedule_items where user_id = ${user.id} and day = ${day}::date order by start_time`,
+        title, detail, icon, color, done, remind_before_min, routine_id
+      from schedule_items where user_id = ${user.id} and day = ${day}::date and hidden = false order by start_time`,
     sql`
       select id, title, detail, icon, color, remind_at, repeat, done
       from reminders where user_id = ${user.id} and (done = false or remind_at > now() - interval '1 day')
@@ -84,7 +86,7 @@ export const GET = withUser(async (req, { user }) => {
     chart: chart.map((c) => ({ day: c.day, income: num(c.income), expense: num(c.expense) })),
     transactions: transactions.map((t) => ({ id: t.id, name: t.name, category: t.category, amount: num(t.amount), goalId: t.goal_id, occurredAt: t.occurred_at })),
     goals: goals.map((g) => ({ id: g.id, title: g.title, note: g.note, targetAmount: num(g.target_amount), savedAmount: num(g.saved_amount), deadline: g.deadline, color: g.color, icon: g.icon })),
-    schedule: schedule.map((i) => ({ id: i.id, day: i.day, startTime: i.start_time, endTime: i.end_time, title: i.title, detail: i.detail, icon: i.icon, color: i.color, done: i.done, remindBeforeMin: i.remind_before_min })),
+    schedule: schedule.map((i) => ({ id: i.id, day: i.day, startTime: i.start_time, endTime: i.end_time, title: i.title, detail: i.detail, icon: i.icon, color: i.color, done: i.done, remindBeforeMin: i.remind_before_min, routineId: i.routine_id })),
     reminders: reminders.map((r) => ({ id: r.id, title: r.title, detail: r.detail, icon: r.icon, color: r.color, remindAt: r.remind_at, repeat: r.repeat, done: r.done })),
     notifications: notifications.map((n) => ({ id: n.id, kind: n.kind, title: n.title, body: n.body, url: n.url, readAt: n.read_at, createdAt: n.created_at })),
     unreadCount: unread[0].count,

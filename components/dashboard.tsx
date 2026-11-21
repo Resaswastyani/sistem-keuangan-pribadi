@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Coffee, CreditCard, Dumbbell, Goal, Headphones, MoonStar, Heart, Home, KeyRound, Laptop, LayoutDashboard, LogOut, Menu, Moon, MoreHorizontal, Music2, Plane, Plus, RefreshCw, Send, Settings2, Smartphone, Sparkles, Sun, Target, Trash2, TrendingDown, TrendingUp, Wallet, X } from "lucide-react"
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Coffee, CreditCard, Dumbbell, Goal, Headphones, MoonStar, Heart, Home, KeyRound, Laptop, LayoutDashboard, LogOut, Menu, Moon, MoreHorizontal, Music2, Plane, Plus, RefreshCw, Repeat, Send, Settings2, Smartphone, Sparkles, Sun, Target, Trash2, TrendingDown, TrendingUp, Wallet, X } from "lucide-react"
 import { api, type DashboardData } from "@/lib/client-api"
 import { IbadahPage, NextPrayerMini, NotificationPrefs } from "@/components/ibadah"
+import { RoutinesPanel, WEEKDAYS } from "@/components/routines"
 import { currentSubscription, disablePush, enablePush, pushEnv, registerServiceWorker, type PushEnv } from "@/lib/push-client"
 
 type Tab = "Ringkasan" | "Keuangan" | "Ibadah" | "Jadwal" | "Target" | "Pengingat" | "Pengaturan"
@@ -63,6 +64,7 @@ export function Dashboard() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [push, setPush] = useState<{ env: PushEnv; subscribed: boolean }>({ env: { supported: false, ios: false, standalone: false, permission: "unsupported", needsInstall: false }, subscribed: false })
   const [busy, setBusy] = useState(false)
+  const [routineVersion, setRoutineVersion] = useState(0)
   const dayRef = useRef<string | null>(null)
   dayRef.current = day
 
@@ -188,7 +190,7 @@ export function Dashboard() {
   const greeting = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 18 ? "Selamat sore" : "Selamat malam"
 
   const toggleSchedule = (id: string, done: boolean) => mutate(() => api(`/api/schedule/${id}`, { method: "PATCH", body: { done } }))
-  const scheduleProps = { items: data.schedule, onToggle: toggleSchedule, onDelete: (id: string) => mutate(() => api(`/api/schedule/${id}`, { method: "DELETE" }), "Kegiatan dihapus") }
+  const scheduleProps = { items: data.schedule, onToggle: toggleSchedule, onDelete: (id: string) => { const item = data.schedule.find((i) => i.id === id); return mutate(() => api(`/api/schedule/${id}`, { method: "DELETE" }), item?.routineId ? "Rutinitas dilewati untuk hari ini" : "Kegiatan dihapus") } }
 
   return <main className="app-shell" data-theme={light ? "light" : "dark"}>
     <aside className={`sidebar glass-panel ${menuOpen ? "sidebar-open" : ""}`}>
@@ -252,6 +254,7 @@ export function Dashboard() {
         {active === "Jadwal" && <>
           <PageHeading eyebrow="RITME YANG PAS UNTUKMU" title="Jadwal harian" description="Beri ruang untuk fokus, istirahat, dan hal-hal yang kamu suka." action={<button className="primary-button" onClick={() => setDialog({ type: "schedule" })}><Plus size={17}/> Tambah kegiatan</button>}/>
           <section className="panel glass-panel schedule-full"><div className="calendar-top"><div><div className="eyebrow">{selectedDay === today ? "HARI INI" : dayLabel(selectedDay, { weekday: "long" }).toUpperCase()}</div><h2>{dayLabel(selectedDay, { day: "numeric", month: "long", year: "numeric" })}</h2></div><div className="day-nav"><button className="period-select" aria-label="Minggu sebelumnya" onClick={() => setDay(addDays(selectedDay, -7))}><ChevronLeft size={14}/></button><button className="period-select" onClick={() => setDay(today)}>Hari ini</button><button className="period-select" aria-label="Minggu berikutnya" onClick={() => setDay(addDays(selectedDay, 7))}><ChevronRight size={14}/></button></div></div><WeekStrip days={weekdays} selected={selectedDay} today={today} onSelect={setDay}/><ScheduleTimeline {...scheduleProps} onAdd={() => setDialog({ type: "schedule" })}/></section>
+          <RoutinesPanel toast={toast} onChanged={load} version={routineVersion}/>
           <div className="reminder-banner glass-panel"><span className="reminder-icon"><Bell size={18}/></span><span><strong>{push.subscribed ? "Notifikasi aktif di perangkat ini" : "Aktifkan notifikasi"}</strong><small>{push.subscribed ? "Kegiatan dengan pengingat akan muncul di layar HP-mu." : "Supaya agenda & pengingat muncul seperti pesan di HP."}</small></span>{!push.subscribed && <button className="text-link" onClick={() => selectPage("Pengaturan")}>Atur <ArrowUpRight size={13}/></button>}</div>
         </>}
 
@@ -299,7 +302,7 @@ export function Dashboard() {
 
     <nav className="mobile-nav" aria-label="Navigasi mobile">{[NAV[0], NAV[1], NAV[2], NAV[3], NAV[5]].map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={active === label ? "mobile-selected" : ""}><Icon size={19}/><span>{label}</span></button>)}</nav>
 
-    {dialog && <FormDialog dialog={dialog} data={data} busy={busy} onClose={() => setDialog(null)} onSubmit={async (fn, msg) => { if (await mutate(fn, msg)) setDialog(null) }}/>}
+    {dialog && <FormDialog dialog={dialog} data={data} busy={busy} onClose={() => setDialog(null)} onSubmit={async (fn, msg) => { if (await mutate(fn, msg)) { setDialog(null); setRoutineVersion((v) => v + 1) } }}/>}
 
     <div className="toast-stack" aria-live="polite">{toasts.map((t) => <div key={t.id} className="toast glass-panel"><img src="/icons/icon-192.png" alt="" width={34} height={34}/><span><strong>{t.title}</strong>{t.body && <small>{t.body}</small>}</span><button aria-label="Tutup" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}><X size={14}/></button></div>)}</div>
   </main>
@@ -317,6 +320,7 @@ function PushCard({ push, busy, onToggle, compact = false }: { push: { env: Push
 function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: NonNullable<Dialog>; data: DashboardData; busy: boolean; onClose: () => void; onSubmit: (fn: () => Promise<unknown>, msg: string) => void }) {
   const [kind, setKind] = useState<"expense" | "income">("expense")
   const [error, setError] = useState("")
+  const [repeatDays, setRepeatDays] = useState<number[]>([])
   const now = new Intl.DateTimeFormat("en-GB", { timeZone: data.timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(Date.now() + 15 * 60_000))
   const goal = dialog.type === "saving" ? data.goals.find((g) => g.id === dialog.goalId) ?? data.goals[0] : undefined
   const titles = { transaction: ["Catat transaksi", "Masukkan transaksi untuk memperbarui ringkasanmu."], saving: ["Tambah tabungan", goal ? `Sisihkan sedikit demi sedikit untuk ${goal.title}.` : "Buat target dulu ya."], goal: ["Target baru", "Tentukan impian dan jumlah yang ingin dikumpulkan."], schedule: ["Tambah kegiatan", `Untuk ${dayLabel(data.day, { weekday: "long", day: "numeric", month: "long" })}.`], reminder: ["Buat pengingat", "Akan dikirim sebagai notifikasi di HP-mu."], password: ["Ganti kata sandi", "Semua perangkat lain akan otomatis keluar."] } as const
@@ -336,6 +340,7 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: NonNull
       case "goal": return onSubmit(() => api("/api/goals", { body: { title: f.title, note: f.note, targetAmount: Number(f.targetAmount), deadline: f.deadline || null, color: f.color, icon: f.icon } }), "Target dibuat")
       case "schedule":
         if (f.endTime <= f.startTime) return setError("Jam selesai harus setelah jam mulai.")
+        if (repeatDays.length) return onSubmit(() => api("/api/routines", { body: { weekdays: repeatDays, startTime: f.startTime, endTime: f.endTime, title: f.title, detail: f.detail, icon: f.icon, color: f.color, remindBeforeMin: f.remind === "" ? null : Number(f.remind) } }), `Rutinitas dibuat untuk ${repeatDays.length} hari/minggu`)
         return onSubmit(() => api("/api/schedule", { body: { day: data.day, startTime: f.startTime, endTime: f.endTime, title: f.title, detail: f.detail, icon: f.icon, color: f.color, remindBeforeMin: f.remind === "" ? null : Number(f.remind) } }), "Kegiatan ditambahkan")
       case "reminder": return onSubmit(() => api("/api/reminders", { body: { title: f.title, detail: f.detail, date: f.date, time: f.time, repeat: f.repeat, icon: f.icon, color: f.color } }), "Pengingat dibuat")
       case "password":
@@ -374,6 +379,8 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: NonNull
           <div className="form-row"><span><label htmlFor="f-start">Mulai</label><input id="f-start" name="startTime" type="time" defaultValue="08:00" required/></span><span><label htmlFor="f-end">Selesai</label><input id="f-end" name="endTime" type="time" defaultValue="09:00" required/></span></div>
           <label htmlFor="f-remind">Ingatkan aku</label><select id="f-remind" name="remind" defaultValue="10"><option value="">Tanpa pengingat</option><option value="0">Saat mulai</option><option value="5">5 menit sebelum</option><option value="10">10 menit sebelum</option><option value="15">15 menit sebelum</option><option value="30">30 menit sebelum</option><option value="60">1 jam sebelum</option></select>
           <div className="form-row"><span>{iconSelect}</span><span>{colorSelect}</span></div>
+          <label>Ulangi setiap minggu <small className="form-hint">(kosongkan = hanya tanggal ini)</small></label>
+          <div className="weekday-pick">{[1, 2, 3, 4, 5, 6, 0].map((d) => <button type="button" key={d} className={repeatDays.includes(d) ? "on" : ""} aria-pressed={repeatDays.includes(d)} onClick={() => setRepeatDays((x) => x.includes(d) ? x.filter((y) => y !== d) : [...x, d])}>{WEEKDAYS[d].slice(0, 3)}</button>)}</div>
         </>}
         {dialog.type === "reminder" && <>
           <label htmlFor="f-title">Ingatkan aku untuk…</label><input id="f-title" name="title" autoFocus maxLength={80} placeholder="Contoh: Res, jangan lupa bayar kos ya" required/>
@@ -457,7 +464,7 @@ function GoalCard({ goal, onSave, onDelete }: { goal: DashboardData["goals"][num
 
 function ScheduleTimeline({ items, onToggle, onDelete, onAdd }: { items: DashboardData["schedule"]; onToggle: (id: string, done: boolean) => void; onDelete: (id: string) => void; onAdd: () => void }) {
   if (items.length === 0) return <div className="empty-state">Belum ada kegiatan di hari ini. <button className="text-link" onClick={onAdd}>Tambah kegiatan <Plus size={12}/></button></div>
-  return <div className="timeline">{items.map((item) => { const Icon = ICONS[item.icon] ?? Sparkles; return <div className={`timeline-item ${item.done ? "is-done" : ""}`} key={item.id}><div className="time-label">{item.startTime.replace(":", ".")}<small>{item.endTime.replace(":", ".")}</small></div><div className={`timeline-icon ${item.color}`}><Icon size={17}/></div><div className="event-copy"><strong>{item.title}{item.remindBeforeMin !== null && <Bell size={10} className="inline-bell" aria-label="Ada pengingat"/>}</strong><span>{item.detail}</span></div><button className="mini-delete" aria-label={`Hapus ${item.title}`} onClick={() => onDelete(item.id)}><Trash2 size={13}/></button><button className={`check-button ${item.done ? "completed" : ""}`} aria-label={item.done ? `Tandai ${item.title} belum selesai` : `Selesaikan ${item.title}`} onClick={() => onToggle(item.id, !item.done)}>{item.done ? <Check size={14}/> : <span/>}</button></div> })}</div>
+  return <div className="timeline">{items.map((item) => { const Icon = ICONS[item.icon] ?? Sparkles; return <div className={`timeline-item ${item.done ? "is-done" : ""}`} key={item.id}><div className="time-label">{item.startTime.replace(":", ".")}<small>{item.endTime.replace(":", ".")}</small></div><div className={`timeline-icon ${item.color}`}><Icon size={17}/></div><div className="event-copy"><strong>{item.title}{item.routineId && <Repeat size={10} className="inline-bell" aria-label="Rutinitas mingguan"/>}{item.remindBeforeMin !== null && <Bell size={10} className="inline-bell" aria-label="Ada pengingat"/>}</strong><span>{item.detail}</span></div><button className="mini-delete" aria-label={item.routineId ? `Lewati ${item.title} hari ini` : `Hapus ${item.title}`} title={item.routineId ? "Lewati hari ini" : "Hapus"} onClick={() => onDelete(item.id)}><Trash2 size={13}/></button><button className={`check-button ${item.done ? "completed" : ""}`} aria-label={item.done ? `Tandai ${item.title} belum selesai` : `Selesaikan ${item.title}`} onClick={() => onToggle(item.id, !item.done)}>{item.done ? <Check size={14}/> : <span/>}</button></div> })}</div>
 }
 
 function TransactionsCard({ transactions, tz, today, onSeeAll, onDelete, expanded = false }: { transactions: DashboardData["transactions"]; tz: string; today: string; onSeeAll?: () => void; onDelete?: (id: string) => void; expanded?: boolean }) {

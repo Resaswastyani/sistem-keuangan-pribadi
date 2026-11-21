@@ -165,3 +165,23 @@ create table if not exists fasting_log (
   updated_at timestamptz not null default now(),
   primary key (user_id, day)
 );
+
+-- ===== Rutinitas mingguan (otomatis menjadi agenda harian) =====
+create table if not exists routines (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references users(id) on delete cascade,
+  weekday           smallint not null check (weekday between 0 and 6), -- 0 = Minggu
+  start_time        time not null,
+  end_time          time not null check (end_time > start_time),
+  title             text not null check (char_length(title) between 1 and 80),
+  detail            text not null default '',
+  icon              text not null default 'sparkles',
+  color             text not null default 'pink',
+  remind_before_min int check (remind_before_min between 0 and 1440),
+  active            boolean not null default true,
+  created_at        timestamptz not null default now()
+);
+create index if not exists routines_user_idx on routines (user_id, weekday, start_time);
+alter table schedule_items add column if not exists routine_id uuid references routines(id) on delete cascade;
+alter table schedule_items add column if not exists hidden boolean not null default false;
+create unique index if not exists schedule_routine_day_uq on schedule_items (routine_id, day);
