@@ -29,15 +29,16 @@ export async function api<T = unknown>(path: string, init: { method?: string; bo
 export type DashboardData = {
   user: { id: string; username: string; displayName: string; monthlyBudget: number }
   today: string
+  cardThemes: Record<string, string>
   day: string
   timezone: string
   stats: { balance: number; balanceChangePct: number | null; monthIncome: number; monthIncomeCount: number; monthExpense: number; monthExpenseCount: number; monthlyBudget: number }
   categories: { category: string; total: number }[]
   chart: { day: string; income: number; expense: number }[]
   transactions: { id: string; name: string; category: string; amount: number; goalId: string | null; occurredAt: string }[]
-  goals: { id: string; title: string; note: string; targetAmount: number; savedAmount: number; deadline: string | null; color: string; icon: string }[]
+  goals: { id: string; kind: "money" | "achievement"; title: string; note: string; targetAmount: number | null; savedAmount: number; progressMode: "percent" | "checklist"; progress: number; milestones: { id: string; text: string; done: boolean }[]; achievedAt: string | null; theme: string | null; deadline: string | null; color: string; icon: string }[]
   schedule: { id: string; day: string; startTime: string; endTime: string; title: string; detail: string; icon: string; color: string; done: boolean; remindBeforeMin: number | null; routineId: string | null }[]
-  reminders: { id: string; title: string; detail: string; icon: string; color: string; remindAt: string; repeat: "none" | "daily" | "weekly" | "monthly"; done: boolean }[]
+  reminders: { id: string; title: string; detail: string; icon: string; color: string; remindAt: string; localDay: string; localTime: string; repeat: "none" | "daily" | "weekly" | "monthly"; done: boolean }[]
   notifications: { id: string; kind: string; title: string; body: string; url: string; readAt: string | null; createdAt: string }[]
   unreadCount: number
 }

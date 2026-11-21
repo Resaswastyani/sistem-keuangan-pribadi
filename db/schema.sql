@@ -190,3 +190,16 @@ create unique index if not exists schedule_routine_day_uq on schedule_items (rou
 alter table routines add column if not exists remind_enabled boolean not null default true;
 alter table routines add column if not exists notify_title text check (char_length(notify_title) <= 120);
 alter table routines add column if not exists notify_body text check (char_length(notify_body) <= 300);
+
+-- ===== Target pencapaian, tema animasi kartu =====
+alter table goals add column if not exists kind text not null default 'money' check (kind in ('money','achievement'));
+alter table goals add column if not exists progress_mode text not null default 'percent' check (progress_mode in ('percent','checklist'));
+alter table goals add column if not exists progress int not null default 0 check (progress between 0 and 100);
+alter table goals add column if not exists milestones jsonb not null default '[]'::jsonb;
+alter table goals add column if not exists achieved_at timestamptz;
+alter table goals add column if not exists theme text;
+alter table goals alter column target_amount drop not null;
+alter table goals drop constraint if exists goals_target_amount_check;
+alter table goals drop constraint if exists goals_target_amount_chk;
+alter table goals add constraint goals_target_amount_chk check (target_amount is null or target_amount > 0);
+alter table users add column if not exists card_themes jsonb not null default '{}'::jsonb;

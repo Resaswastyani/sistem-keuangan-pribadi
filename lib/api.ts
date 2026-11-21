@@ -2,6 +2,7 @@ import "server-only"
 import { NextResponse } from "next/server"
 import { z, ZodError } from "zod"
 import { getSessionUser, type SessionUser } from "./auth"
+import { ICON_KEYS } from "./icon-keys"
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -52,5 +53,5 @@ export const uuid = z.string().uuid()
 export const shortText = (max = 80) => z.string().trim().min(1).max(max)
 export const optionalText = (max = 160) => z.string().trim().max(max).optional().default("")
 export const rupiah = z.coerce.number().int().positive().max(1_000_000_000_000)
-export const iconKey = z.enum(["sparkles", "bell", "book", "music", "coffee", "dumbbell", "headphones", "laptop", "plane", "wallet", "heart", "home", "card"])
+export const iconKey = z.enum(ICON_KEYS)
 export const colorKey = z.enum(["pink", "violet", "mint", "amber"])

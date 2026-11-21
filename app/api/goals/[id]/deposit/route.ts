@@ -10,8 +10,9 @@ export const POST = withUser<Ctx>(async (req, { user, params }) => {
   const id = uuid.parse((await params).id)
   const { amount } = await readJson(req, z.object({ amount: rupiah }))
 
-  const [goal] = await sql`select id, title, target_amount, saved_amount from goals where id = ${id} and user_id = ${user.id}`
+  const [goal] = await sql`select id, kind, title, target_amount, saved_amount from goals where id = ${id} and user_id = ${user.id}`
   if (!goal) throw new HttpError(404, "Target tidak ditemukan.")
+  if (goal.kind !== "money") throw new HttpError(400, "Target pencapaian tidak memakai tabungan.")
 
   await sql.transaction([
     sql`insert into transactions (user_id, goal_id, name, category, amount) values (${user.id}, ${id}, ${"Tabungan " + goal.title}, 'Tabungan', ${-amount})`,
