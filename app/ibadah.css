@@ -1,0 +1,109 @@
+/* ===== Ibadah: jadwal sholat, puasa & editor pesan notifikasi ===== */
+.mobile-nav { grid-template-columns: repeat(5, 1fr) !important; }
+.prayer-mini { width: 100%; margin: 0 0 16px; text-align: left; border: 1px solid rgba(255,255,255,.08); color: inherit; cursor: pointer; font: inherit; }
+.prayer-mini > svg:last-child { margin-left: auto; opacity: .6; }
+
+.ibadah-top { display: grid; grid-template-columns: minmax(220px,.8fr) 2fr; gap: 15px; margin-bottom: 15px; }
+.ibadah-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.next-prayer { display: flex; flex-direction: column; justify-content: center; gap: 6px; background-image: radial-gradient(circle at 85% 10%, rgba(241,168,197,.22), transparent 55%) !important; }
+.next-prayer h2 { margin: 6px 0 0; font-size: 26px; letter-spacing: -.02em; }
+.next-prayer h2 span { color: #f1b5cd; font-weight: 600; }
+.next-prayer p { margin: 0; font-size: 11px; color: #b9aeb5; }
+.ramadan-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; margin-top: 8px; padding: 5px 10px; border-radius: 20px; background: rgba(243,215,126,.14); color: #f3d77e; font-size: 9.5px; font-weight: 600; }
+
+.prayer-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.prayer-cell { position: relative; display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05); }
+.prayer-cell span { font-size: 9.5px; color: #a99ea6; }
+.prayer-cell strong { font-size: 16px; }
+.prayer-cell svg { position: absolute; top: 10px; right: 10px; opacity: .45; }
+.prayer-cell.passed { opacity: .5; }
+.prayer-cell.is-next { background: linear-gradient(140deg, rgba(241,168,197,.22), rgba(183,145,211,.12)); border-color: rgba(241,168,197,.35); opacity: 1; }
+.prayer-cell.is-next strong { color: #f6c5d8; }
+
+.fasting-card { display: flex; flex-direction: column; gap: 10px; }
+.fasting-card h2 { margin: 2px 0 0; font-size: 16px; }
+.fasting-times { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 10.5px; color: #b9aeb5; }
+.fasting-times svg:nth-of-type(2) { margin-left: 8px; }
+.fast-actions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.fast-actions .secondary-button { padding: 0 12px; }
+.fast-status { display: grid; gap: 9px; }
+.chip { display: inline-flex; align-items: center; width: fit-content; padding: 4px 9px; border-radius: 20px; font-size: 9.5px; font-weight: 600; border: 0; background: rgba(255,255,255,.07); color: inherit; }
+.chip-done { background: rgba(165,217,178,.16); color: #bce7c9; }
+.chip-missed { background: rgba(242,155,183,.14); color: #f29bb7; }
+.chip-planned { background: rgba(183,145,211,.18); color: #d9bdf0; cursor: pointer; }
+.fast-tomorrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.07); }
+.fast-tomorrow > span:first-child { display: grid; gap: 3px; }
+.fast-tomorrow strong { font-size: 10.5px; }
+.fast-tomorrow small { font-size: 9.5px; color: #a99ea6; }
+
+.recap-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 12px 0 4px; }
+.recap-grid div { display: grid; gap: 3px; padding: 10px; border-radius: 11px; background: rgba(255,255,255,.03); text-align: center; }
+.recap-grid strong { font-size: 18px; }
+.recap-grid span { font-size: 8.5px; color: #a99ea6; }
+.recap-grid .owed strong { color: #f29bb7; }
+.upcoming-list { display: grid; gap: 2px; margin-top: 8px; }
+.upcoming-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.upcoming-row > span { display: grid; gap: 2px; }
+.upcoming-row strong { font-size: 10.5px; }
+.upcoming-row small { font-size: 9px; color: #a99ea6; }
+
+.month-panel { margin-bottom: 15px; }
+.month-table-wrap { overflow-x: auto; margin: 0 -4px; -webkit-overflow-scrolling: touch; }
+.month-table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 10.5px; }
+.month-table th { text-align: left; font-weight: 600; font-size: 9px; color: #a99ea6; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.08); letter-spacing: .04em; }
+.month-table td { padding: 7px 6px; border-bottom: 1px solid rgba(255,255,255,.04); font-variant-numeric: tabular-nums; }
+.month-table td:first-child { display: grid; gap: 1px; }
+.month-table td small { font-size: 8.5px; color: #8f858c; }
+.month-table tr.is-today td { background: rgba(241,168,197,.1); }
+.month-table tr.is-today td:first-child { box-shadow: inset 2px 0 #edacc5; }
+
+.prefs-panel { margin-bottom: 15px; }
+.prefs-panel > h2 { margin: 6px 0 4px; font-size: 16px; }
+.prefs-intro { font-size: 10px; color: #a99ea6; margin: 0 0 6px; line-height: 1.6; }
+.prefs-intro em { color: #f1bfd1; font-style: normal; }
+.pref-group { margin-top: 12px; }
+.pref-group .side-label { margin: 0 0 4px; padding: 0; }
+.pref-row { border-bottom: 1px solid rgba(255,255,255,.06); }
+.pref-head { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
+.pref-title { flex: 1; min-width: 0; display: grid; gap: 3px; text-align: left; background: none; border: 0; color: inherit; padding: 0; cursor: pointer; font: inherit; }
+.pref-title strong { font-size: 11px; display: flex; align-items: center; gap: 6px; }
+.pref-title small { font-size: 9.5px; color: #a99ea6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom-dot { font-size: 8px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: rgba(241,168,197,.18); color: #f1bfd1; }
+.pref-editor { margin: 0 0 14px; padding: 14px; border-radius: 13px; background: rgba(255,255,255,.025); }
+.transaction-form textarea { padding: 9px 11px; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; outline: none; background: rgba(255,255,255,.04); color: #f5eff2; font: inherit; font-size: 11px; resize: vertical; width: 100%; }
+.transaction-form textarea:focus { border-color: #df98b6; }
+.var-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.var-chips button { padding: 3px 8px; border-radius: 7px; border: 1px dashed rgba(241,168,197,.35); background: none; color: #f1bfd1; font-size: 9px; font-family: ui-monospace, monospace; cursor: pointer; }
+.notif-preview { display: flex; gap: 10px; padding: 11px; border-radius: 14px; background: rgba(245,240,243,.92); color: #2b2128; margin-top: 4px; }
+.notif-preview img { border-radius: 8px; flex: none; }
+.notif-preview > span { display: grid; gap: 2px; min-width: 0; }
+.notif-preview small { font-size: 8.5px; color: #7d6f78; }
+.notif-preview strong { font-size: 11px; }
+.notif-preview span span { font-size: 10px; line-height: 1.4; color: #4b3f47; }
+.pref-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.pref-actions .primary-button { margin: 0; width: auto; }
+.pref-actions .secondary-button { padding: 0 12px; }
+
+.search-row { display: flex; gap: 7px; }
+.search-row .secondary-button { padding: 0 13px; height: 39px; }
+.city-results { display: flex; flex-wrap: wrap; gap: 6px; }
+.city-results button { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 9px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); color: inherit; font-size: 10px; cursor: pointer; }
+.city-results button.picked { border-color: rgba(241,168,197,.5); background: rgba(241,168,197,.14); color: #f6c5d8; }
+.page-heading .eyebrow svg { vertical-align: -2px; }
+
+.app-shell[data-theme="light"] .prayer-cell,
+.app-shell[data-theme="light"] .recap-grid div,
+.app-shell[data-theme="light"] .pref-editor { background: rgba(183,132,158,.07); }
+.app-shell[data-theme="light"] .prayer-cell.is-next strong,
+.app-shell[data-theme="light"] .next-prayer h2 span { color: #c2527f; }
+.app-shell[data-theme="light"] .transaction-form textarea { color: #453642; }
+
+@media (max-width: 1050px) { .ibadah-top, .ibadah-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .prayer-grid { gap: 6px; }
+  .prayer-cell { padding: 9px 8px; }
+  .prayer-cell strong { font-size: 13px; }
+  .prayer-cell svg { display: none; }
+  .recap-grid { grid-template-columns: repeat(2,1fr); }
+  .mobile-nav button span { font-size: 7.5px; }
+}

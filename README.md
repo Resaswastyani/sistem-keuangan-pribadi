@@ -11,7 +11,30 @@ Aplikasi pribadi untuk mencatat keuangan, target tabungan, jadwal harian, dan pe
 - **Jadwal harian**: kegiatan per tanggal, opsi "ingatkan X menit sebelum"
 - **Pengingat**: sekali, harian, mingguan, atau bulanan
 - **Notifikasi**: daftar notifikasi di dalam app, dan push ke HP/laptop walau app sedang ditutup
-- **Otomatis via cron**: pengingat jatuh tempo, ringkasan malam (20.00), peringatan anggaran 80% / 100%
+- **Ibadah**: jadwal sholat resmi Kemenag RI per kabupaten/kota (bawaan: Boyolali), kalender Hijriah, puasa Ramadan & sunnah, rekap dan utang puasa
+- **Pesan notifikasi custom**: setiap notifikasi otomatis bisa ditulis sendiri, misalnya `Res jangan lupa sholat {sholat} dulu 🤍`
+- **Otomatis via cron**: adzan, sahur, imsak, berbuka, puasa sunnah besok, pengingat jatuh tempo, ringkasan malam, dan peringatan anggaran 80% / 100%
+
+## Jadwal sholat & puasa
+
+- **Sumber data**: [MyQuran API](https://api.myquran.com) (data Kemenag RI). Kalau MyQuran sedang down, otomatis pakai [Aladhan](https://aladhan.com) dengan metode Kemenag (`method=20`).
+- Jadwal diambil **sebulan sekali** per kota dan disimpan di tabel `prayer_times`, jadi app dan cron tidak memanggil API luar setiap saat.
+- **Kalender Hijriah** dihitung di server (Umm al-Qura). Di menu Ibadah ada **koreksi ±1–2 hari** untuk menyesuaikan dengan hasil sidang isbat.
+- **Puasa sunnah** yang dikenali: Senin, Kamis, Ayyamul Bidh (13–15), Arafah, awal Zulhijah, Tasua, Asyura, dan 6 hari Syawal. Hari raya & hari tasyrik otomatis dikecualikan.
+- **Pengingat sahur, imsak & berbuka** dikirim saat Ramadan, atau di hari yang kamu tandai "Aku puasa hari ini" / "Rencanakan".
+
+### Placeholder pesan custom
+
+| Notifikasi | Placeholder |
+|---|---|
+| Sholat | `{nama}` `{sholat}` `{waktu}` `{sisa}` `{kota}` `{tanggal_hijriah}` |
+| Sahur / Imsak / Berbuka | `{nama}` `{waktu}` `{sisa}` `{kota}` `{tanggal_hijriah}` |
+| Puasa sunnah besok | `{nama}` `{jenis}` `{tanggal_hijriah}` |
+| Ringkasan malam | `{nama}` `{ringkasan}` `{jumlah_transaksi}` `{pengeluaran}` `{agenda_besok}` |
+| Anggaran | `{nama}` `{persen}` `{terpakai}` `{anggaran}` |
+| Agenda | `{nama}` `{judul}` `{waktu}` `{sisa}` `{detail}` |
+
+Untuk pengingat yang kamu buat sendiri di menu **Pengingat**, judul dan detailnya dikirim apa adanya.
 
 ## Menjalankan di komputer
 
@@ -31,7 +54,7 @@ pnpm dev
 
 ## Cronjob (notifikasi & pengingat)
 
-Endpoint: `GET` atau `POST /api/cron/reminders`, dijalankan **tiap 5 menit** (atau tiap 1 menit kalau ingin lebih tepat waktu).
+Endpoint: `GET` atau `POST /api/cron/reminders`, dijalankan **tiap 1 menit** supaya notifikasi adzan tepat waktu. Minimal tiap 5 menit, tapi notifikasi bisa telat sampai 5 menit. Notifikasi yang telat lebih dari 20 menit (misalnya karena cron sempat mati) tidak dikirim.
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" https://DOMAIN-KAMU/api/cron/reminders
@@ -39,7 +62,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://DOMAIN-KAMU/api/cron/remind
 
 Contoh dengan **cron-job.org** (gratis):
 - URL: `https://DOMAIN-KAMU/api/cron/reminders`
-- Schedule: setiap 5 menit
+- Schedule: setiap 1 menit
 - Advanced → Headers: `Authorization` = `Bearer <CRON_SECRET>`
 
 Kalau layanan cron-mu tidak bisa menambah header, bisa pakai header `x-cron-secret: <CRON_SECRET>`, atau sebagai pilihan terakhir query `?secret=<CRON_SECRET>` (kurang aman karena bisa tercatat di log).

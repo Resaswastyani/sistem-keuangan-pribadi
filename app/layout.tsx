@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import './ibadah.css'
 
 export const metadata: Metadata = {
   title: 'mellow — ruang kecil untuk hidup lebih teratur',

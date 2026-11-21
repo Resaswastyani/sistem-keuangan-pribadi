@@ -109,3 +109,59 @@ create table if not exists push_subscriptions (
   last_used_at timestamptz
 );
 create index if not exists push_user_idx on push_subscriptions (user_id);
+
+-- ===== Ibadah: jadwal sholat, puasa, dan pesan notifikasi custom =====
+alter table users add column if not exists city_id text not null default '1405';
+alter table users add column if not exists city_name text not null default 'KAB. BOYOLALI';
+alter table users add column if not exists hijri_offset int not null default 0 check (hijri_offset between -2 and 2);
+
+-- Cache jadwal sholat per kota per hari (diambil sebulan sekali dari API).
+create table if not exists prayer_times (
+  city_id  text not null,
+  day      date not null,
+  imsak    time not null,
+  subuh    time not null,
+  terbit   time not null,
+  dhuha    time not null,
+  dzuhur   time not null,
+  ashar    time not null,
+  maghrib  time not null,
+  isya     time not null,
+  source   text not null default 'myquran',
+  fetched_at timestamptz not null default now(),
+  primary key (city_id, day)
+);
+
+-- Preferensi tiap jenis notifikasi otomatis (sholat, puasa, ringkasan, anggaran, agenda).
+-- title/body null = pakai pesan bawaan. Mendukung placeholder seperti {nama}, {sholat}, {waktu}.
+create table if not exists notification_prefs (
+  user_id    uuid not null references users(id) on delete cascade,
+  key        text not null,
+  enabled    boolean not null,
+  before_min int not null default 0 check (before_min between 0 and 180),
+  at_time    time,
+  title      text check (char_length(title) <= 120),
+  body       text check (char_length(body) <= 300),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+
+-- Penanda notifikasi terjadwal yang sudah terkirim (mencegah dobel).
+create table if not exists notification_log (
+  user_id uuid not null references users(id) on delete cascade,
+  key     text not null,
+  day     date not null,
+  sent_at timestamptz not null default now(),
+  primary key (user_id, key, day)
+);
+
+-- Catatan puasa harian.
+create table if not exists fasting_log (
+  user_id    uuid not null references users(id) on delete cascade,
+  day        date not null,
+  kind       text not null check (kind in ('ramadan','sunnah','qadha','nazar')),
+  status     text not null check (status in ('planned','done','missed')),
+  note       text not null default '',
+  updated_at timestamptz not null default now(),
+  primary key (user_id, day)
+);

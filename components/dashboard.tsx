@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Coffee, CreditCard, Dumbbell, Goal, Headphones, Heart, Home, KeyRound, Laptop, LayoutDashboard, LogOut, Menu, Moon, MoreHorizontal, Music2, Plane, Plus, RefreshCw, Send, Settings2, Smartphone, Sparkles, Sun, Target, Trash2, TrendingDown, TrendingUp, Wallet, X } from "lucide-react"
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, BellOff, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Coffee, CreditCard, Dumbbell, Goal, Headphones, MoonStar, Heart, Home, KeyRound, Laptop, LayoutDashboard, LogOut, Menu, Moon, MoreHorizontal, Music2, Plane, Plus, RefreshCw, Send, Settings2, Smartphone, Sparkles, Sun, Target, Trash2, TrendingDown, TrendingUp, Wallet, X } from "lucide-react"
 import { api, type DashboardData } from "@/lib/client-api"
+import { IbadahPage, NextPrayerMini, NotificationPrefs } from "@/components/ibadah"
 import { currentSubscription, disablePush, enablePush, pushEnv, registerServiceWorker, type PushEnv } from "@/lib/push-client"
 
-type Tab = "Ringkasan" | "Keuangan" | "Jadwal" | "Target" | "Pengingat" | "Pengaturan"
+type Tab = "Ringkasan" | "Keuangan" | "Ibadah" | "Jadwal" | "Target" | "Pengingat" | "Pengaturan"
 type Dialog = null | { type: "transaction" } | { type: "saving"; goalId?: string } | { type: "goal" } | { type: "schedule" } | { type: "reminder" } | { type: "password" }
 type Toast = { id: number; title: string; body?: string }
 
@@ -16,7 +17,7 @@ const EXPENSE_CATEGORIES = ["Makan & minum", "Transportasi", "Pendidikan", "Bela
 const INCOME_CATEGORIES = ["Pemasukan", "Uang saku", "Gaji", "Hadiah", "Bonus"]
 const REPEAT_LABEL = { none: "Sekali", daily: "Setiap hari", weekly: "Setiap minggu", monthly: "Setiap bulan" } as const
 const NAV: { label: Tab; icon: LucideIcon }[] = [
-  { label: "Ringkasan", icon: LayoutDashboard }, { label: "Keuangan", icon: Wallet }, { label: "Jadwal", icon: CalendarDays },
+  { label: "Ringkasan", icon: LayoutDashboard }, { label: "Keuangan", icon: Wallet }, { label: "Ibadah", icon: MoonStar }, { label: "Jadwal", icon: CalendarDays },
   { label: "Target", icon: Goal }, { label: "Pengingat", icon: Bell }, { label: "Pengaturan", icon: Settings2 },
 ]
 const TABS = NAV.map((n) => n.label)
@@ -193,9 +194,9 @@ export function Dashboard() {
     <aside className={`sidebar glass-panel ${menuOpen ? "sidebar-open" : ""}`}>
       <a href="/" className="brand"><span className="brand-mark"><Sparkles size={19}/></span><span>mellow<span className="brand-dot">.</span><small>YOUR LIFE, IN FLOW</small></span></a>
       <div className="side-label">MENU UTAMA</div>
-      <nav className="nav-list" aria-label="Menu utama">{NAV.slice(0, 4).map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={`nav-item ${active === label ? "selected" : ""}`}><Icon size={18}/>{label}{label === "Jadwal" && data.schedule.length > 0 && <span className="nav-count">{data.schedule.length}</span>}</button>)}</nav>
+      <nav className="nav-list" aria-label="Menu utama">{NAV.slice(0, 5).map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={`nav-item ${active === label ? "selected" : ""}`}><Icon size={18}/>{label}{label === "Jadwal" && data.schedule.length > 0 && <span className="nav-count">{data.schedule.length}</span>}</button>)}</nav>
       <div className="side-label space-top">PERSONAL</div>
-      <nav className="nav-list" aria-label="Menu personal">{NAV.slice(4).map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={`nav-item ${active === label ? "selected" : ""}`}><Icon size={18}/>{label}{label === "Pengingat" && activeReminders.length > 0 && <span className="nav-count">{activeReminders.length}</span>}</button>)}</nav>
+      <nav className="nav-list" aria-label="Menu personal">{NAV.slice(5).map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={`nav-item ${active === label ? "selected" : ""}`}><Icon size={18}/>{label}{label === "Pengingat" && activeReminders.length > 0 && <span className="nav-count">{activeReminders.length}</span>}</button>)}</nav>
       <div className="sidebar-bottom"><div className="upgrade-card"><span className="upgrade-icon"><Sparkles size={17}/></span><strong>Ruang untuk bertumbuh</strong><p>Langkah kecilmu berarti banyak.</p><button onClick={() => selectPage("Target")}>Lihat target <ArrowUpRight size={14}/></button></div><div className="profile"><span className="avatar">{initial}</span><span><strong>{user.displayName}</strong><small>@{user.username}</small></span><button onClick={logout} className="logout-icon" aria-label="Keluar" title="Keluar"><LogOut size={16}/></button></div></div>
     </aside>
     {menuOpen && <button className="menu-scrim" aria-label="Tutup menu" onClick={() => setMenuOpen(false)}/>}
@@ -219,6 +220,7 @@ export function Dashboard() {
       <div className="page-wrap">
         {active === "Ringkasan" && <>
           <div className="greeting-row"><div><div className="eyebrow"><span className="live-dot"/>{dateLabel}</div><h1>{greeting}, <em>{user.displayName}.</em></h1><p className="page-subtitle">Hari yang baik dimulai dari langkah kecil. Kamu sudah melakukannya.</p></div><button className="primary-button" onClick={() => setDialog({ type: "transaction" })}><Plus size={17}/> Catat aktivitas</button></div>
+          <NextPrayerMini onOpen={() => selectPage("Ibadah")}/>
           <section className="stats-grid" aria-label="Ringkasan keuangan">
             <article className="stat-card glass-panel"><div className="stat-top"><span>Total saldo</span><span className="stat-icon mint-bg"><Wallet size={18}/></span></div><strong className="stat-value">{stats.balance < 0 ? "− " : ""}{money(stats.balance)}</strong><div className="stat-foot">{stats.balanceChangePct !== null ? <span className={stats.balanceChangePct >= 0 ? "positive" : "soft-text"}>{stats.balanceChangePct >= 0 ? <TrendingUp size={13}/> : <TrendingDown size={13}/>} {Math.abs(stats.balanceChangePct).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%</span> : <span className="soft-text">Mulai mencatat</span>}<span>dari awal bulan</span></div></article>
             <article className="stat-card glass-panel"><div className="stat-top"><span>Pemasukan bulan ini</span><span className="stat-icon violet-bg"><ArrowDownLeft size={18}/></span></div><strong className="stat-value">{money(stats.monthIncome)}</strong><div className="stat-foot"><span className="positive"><ArrowDownLeft size={13}/> {stats.monthIncomeCount} transaksi</span><span> bulan ini</span></div></article>
@@ -244,6 +246,8 @@ export function Dashboard() {
           </section>
           <TransactionsCard transactions={data.transactions} tz={timezone} today={today} expanded onDelete={(id) => confirm("Hapus transaksi ini?") && mutate(() => api(`/api/transactions/${id}`, { method: "DELETE" }), "Transaksi dihapus")}/>
         </>}
+
+        {active === "Ibadah" && <IbadahPage toast={toast}/>}
 
         {active === "Jadwal" && <>
           <PageHeading eyebrow="RITME YANG PAS UNTUKMU" title="Jadwal harian" description="Beri ruang untuk fokus, istirahat, dan hal-hal yang kamu suka." action={<button className="primary-button" onClick={() => setDialog({ type: "schedule" })}><Plus size={17}/> Tambah kegiatan</button>}/>
@@ -288,11 +292,12 @@ export function Dashboard() {
               <div className="settings-foot">Sesi terenkripsi · otomatis keluar setelah 7 hari</div>
             </article>
           </section>
+          <NotificationPrefs groups={["lainnya"]} toast={toast} title="Pesan notifikasi lainnya"/>
         </>}
       </div>
     </section>
 
-    <nav className="mobile-nav" aria-label="Navigasi mobile">{[...NAV.slice(0, 3), NAV[4]].map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={active === label ? "mobile-selected" : ""}><Icon size={19}/><span>{label}</span></button>)}</nav>
+    <nav className="mobile-nav" aria-label="Navigasi mobile">{[NAV[0], NAV[1], NAV[2], NAV[3], NAV[5]].map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={active === label ? "mobile-selected" : ""}><Icon size={19}/><span>{label}</span></button>)}</nav>
 
     {dialog && <FormDialog dialog={dialog} data={data} busy={busy} onClose={() => setDialog(null)} onSubmit={async (fn, msg) => { if (await mutate(fn, msg)) setDialog(null) }}/>}
 
@@ -371,7 +376,7 @@ function FormDialog({ dialog, data, busy, onClose, onSubmit }: { dialog: NonNull
           <div className="form-row"><span>{iconSelect}</span><span>{colorSelect}</span></div>
         </>}
         {dialog.type === "reminder" && <>
-          <label htmlFor="f-title">Ingatkan aku untuk…</label><input id="f-title" name="title" autoFocus maxLength={80} placeholder="Contoh: Bayar kos" required/>
+          <label htmlFor="f-title">Ingatkan aku untuk…</label><input id="f-title" name="title" autoFocus maxLength={80} placeholder="Contoh: Res, jangan lupa bayar kos ya" required/>
           <label htmlFor="f-detail">Detail</label><input id="f-detail" name="detail" maxLength={160} placeholder="Opsional"/>
           <div className="form-row"><span><label htmlFor="f-date">Tanggal</label><input id="f-date" name="date" type="date" defaultValue={data.today} min={data.today} required/></span><span><label htmlFor="f-time">Jam</label><input id="f-time" name="time" type="time" defaultValue={now} required/></span></div>
           <label htmlFor="f-repeat">Ulangi</label><select id="f-repeat" name="repeat" defaultValue="none"><option value="none">Tidak diulang</option><option value="daily">Setiap hari</option><option value="weekly">Setiap minggu</option><option value="monthly">Setiap bulan</option></select>
