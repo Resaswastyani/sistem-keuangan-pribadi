@@ -111,3 +111,12 @@
 .app-shell[data-theme="light"] .transaction-form select:focus { border-color:#df98b6; }
 .app-shell[data-theme="light"] .transaction-form select option { background:#fff;color:#493947; }
 .app-shell[data-theme="light"] .transaction-form input[type="date"],.app-shell[data-theme="light"] .transaction-form input[type="time"] { color-scheme:light; }
+
+/* ---------- Hemat baterai di HP ----------
+   backdrop-filter dihitung ulang setiap kali konten di belakangnya berubah (scroll, animasi kartu).
+   Di layar kecil latarnya polos, jadi blur nyaris tak terlihat tapi memakan GPU → matikan. */
+@media(max-width:760px){
+  .glass-panel { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+  .mobile-nav { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; background:rgba(23,18,26,.98) !important; }
+  .app-shell[data-theme="light"] .mobile-nav { background:rgba(255,249,252,.98) !important; }
+}

@@ -11,6 +11,7 @@ import { IconPicker, iconFor } from "@/components/icons"
 import { RoutinesPanel, WEEKDAYS, type Routine } from "@/components/routines"
 import { RoutineNotifs } from "@/components/routine-notifs"
 import { BrandMark } from "@/components/brand-mark"
+import { ThemeMotionGuard } from "@/components/theme-motion-guard"
 import { ThemePicker } from "@/components/theme-picker"
 import { currentSubscription, disablePush, enablePush, pushEnv, registerServiceWorker, type PushEnv } from "@/lib/push-client"
 
@@ -242,7 +243,7 @@ export function Dashboard() {
   }
   const deleteTx = (t: Tx) => confirm(`Hapus transaksi “${t.name}”?`) && mutate(() => api(`/api/transactions/${t.id}`, { method: "DELETE" }), "Transaksi dihapus")
 
-  return <main className="app-shell" data-theme={light ? "light" : "dark"}>
+  return <main className="app-shell" data-theme={light ? "light" : "dark"}><ThemeMotionGuard/>
     <aside className={`sidebar glass-panel ${menuOpen ? "sidebar-open" : ""}`}>
       <a href="/" className="brand"><BrandMark/><span>mellow<span className="brand-dot">.</span><small>YOUR LIFE, IN FLOW</small></span></a>
       <div className="side-label">MENU UTAMA</div>

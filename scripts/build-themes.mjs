@@ -13,8 +13,8 @@
 import { writeFileSync } from "node:fs"
 
 // Escape minimal (bukan encodeURIComponent) supaya CSS tetap kecil: cukup % # < > " dan whitespace.
-const svg = (w, h, body) =>
-  `url("data:image/svg+xml,${`<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>${body}</svg>`
+const svg = (w, h, body, attrs = "") =>
+  `url("data:image/svg+xml,${`<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'${attrs}>${body}</svg>`
     .replace(/\s+/g, " ").replace(/> </g, "><")
     .replace(/[%#<>"]/g, (ch) => encodeURIComponent(ch))}")`
 
@@ -35,6 +35,7 @@ const wrap = (W, H, x, y, ext, draw) => {
   return out
 }
 const N = 8
+const FPS = 30
 /** Lintasan satu siklus: geser (dx, dy) + ayunan sinus. Ayunan kembali ke 0 di akhir → loop mulus. */
 const path = (dx, dy, amp = 0, waves = 1) =>
   Array.from({ length: N + 1 }, (_, i) => {
@@ -181,10 +182,13 @@ const shootingStar = (c) => svg(150, 70, `<defs><linearGradient id='g' x1='0' y1
 // ---------- SVG: aurora ----------
 const curtain = (col, a, W, H, k, phase, base, amp) => {
   const pts = []
-  for (let x = 0; x <= W; x += 10) pts.push([x, n1(base + amp * Math.sin((2 * Math.PI * k * x) / W + phase))])
+  // Tirai digambar dari -W sampai 2W (gelombangnya periodik), tapi yang tampil hanya 0..W.
+  // Jadi tepi blur jatuh di luar tile dan tidak ada sambungan saat tile diulang (repeat-x).
+  for (let x = -W; x <= 2 * W; x += 10) pts.push([x, n1(base + amp * Math.sin((2 * Math.PI * k * x) / W + phase))])
   const top = pts.map(([x, y]) => `${x} ${n1(y - H * 0.42 - amp * 0.6 * Math.sin((2 * Math.PI * k * x) / W + phase * 1.7))}`)
   const d = `M${pts.map(([x, y]) => `${x} ${y}`).join(" L")} L${top.reverse().join(" L")} Z`
-  return svg(W, H, `<defs><linearGradient id='a' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='${rgba(col, 0)}'/><stop offset='.65' stop-color='${rgba(col, a * 0.6)}'/><stop offset='.92' stop-color='${rgba(col, a)}'/><stop offset='1' stop-color='${rgba(col, a * 0.3)}'/></linearGradient></defs><path d='${d}' fill='url(#a)'/>`)
+  // Blur ada di dalam SVG (dirasterisasi sekali), bukan filter CSS yang dihitung ulang tiap frame.
+  return svg(W, H, `<defs><linearGradient id='a' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='${rgba(col, 0)}'/><stop offset='.65' stop-color='${rgba(col, a * 0.6)}'/><stop offset='.92' stop-color='${rgba(col, a)}'/><stop offset='1' stop-color='${rgba(col, a * 0.3)}'/></linearGradient><filter id='s' filterUnits='userSpaceOnUse' x='${-W}' y='${-H}' width='${3 * W}' height='${3 * H}'><feGaussianBlur stdDeviation='5'/></filter></defs><path d='${d}' fill='url(#a)' filter='url(#s)'/>`, " preserveAspectRatio='none'")
 }
 
 // ---------- SVG: sakura ----------
@@ -375,7 +379,6 @@ const T = (c) => {
         kf: (name) => `@keyframes ${name} { 0%, 72% { background-position: 115% -40%; opacity: 0; } 74% { opacity: 1; } 90%, 100% { background-position: -30% 140%; opacity: 0; } }` },
     },
     aurora: {
-      blur: "6px",
       b: { dur: 30, timing: "ease-in-out", direction: "alternate", layers: [
         { img: curtain(c.aurora[0], c.auroraA, 400, 160, 2, 0, 110, 14), w: 400, h: "100%", repeat: "repeat-x", pts: path(-400, 0) },
         { img: curtain(c.aurora[1], c.auroraA * 0.85, 300, 160, 1, 1.5, 90, 18), w: 300, h: "100%", repeat: "repeat-x", pts: path(300, 0) },
@@ -447,7 +450,11 @@ const ptsAt = (L, i) => (L.pts ?? STILL)[i] ?? [0, 0]
 
 function pseudoVars(prefix, P, name) {
   const L = P.layers
-  const anim = P.dur ? `${name} ${P.dur}s ${P.timing ?? "linear"} infinite${P.direction ? ` ${P.direction}` : ""}` : "none"
+  // Hemat baterai: animasi panjang dijalankan bertahap ~FPS frame/detik (steps), bukan 60–120 fps.
+  // Timing function berlaku per segmen keyframe, jadi jumlah step dibagi jumlah segmen.
+  const segs = P.kf ? 3 : stopsOf(P).length - 1
+  const timing = P.dur >= 1 ? `steps(${Math.max(1, Math.round((P.dur * FPS) / segs))})` : (P.timing ?? "linear")
+  const anim = P.dur ? `${name} ${P.dur}s ${timing} infinite${P.direction ? ` ${P.direction}` : ""}` : "none"
   return [
     `--${prefix}-bg: ${L.map((l) => l.img).join(", ")}`,
     `--${prefix}-size: ${L.map((l) => `${len(l.w)} ${len(l.h)}`).join(", ")}`,
@@ -471,22 +478,29 @@ function themeVars(key, t, tint) {
 
 const themed = `.page-wrap[data-card-theme]:not([data-card-theme="none"]) .glass-panel, .page-wrap .glass-panel[data-card-theme]:not([data-card-theme="none"])`
 const sel = (p) => themed.split(", ").map((s) => `${s}${p}`).join(", ")
+// Partikel bergerak hanya di kartu "unggulan" yang sedang terlihat di layar (data-offscreen dipasang
+// oleh components/theme-motion-guard.tsx). Kartu lain (daftar, banner, pengaturan, dialog) cukup tint statis.
+// Semua kartu yang bergerak = repaint tiap frame → HP cepat panas.
+const FEATURED = ".stat-card, .target-panel, .goal-card, .next-prayer, .fasting-card, .empty-state"
+const live = (p) => themed.split(", ").map((s) => `${s}:is(${FEATURED}):not([data-offscreen])${p}`).join(", ")
 let css = `/* AUTO-GENERATED oleh scripts/build-themes.mjs — jangan edit manual. */
 
 ${themed} { position: relative; isolation: isolate; overflow: hidden; }
-${sel("::before")},
-${sel("::after")} {
+${sel("::before")} {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background-image: var(--t-tint, none); background-size: 100% 100%; background-repeat: no-repeat;
+}
+${live("::after")} {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
 }
-${sel("::before")} {
+${live("::before")} {
   background-image: var(--tb-bg, none), var(--t-tint, none);
   background-size: var(--tb-size, auto), 100% 100%;
   background-position: var(--tb-pos, 0 0), 0 0;
   background-repeat: var(--tb-repeat, repeat), no-repeat;
   animation: var(--tb-anim, none);
-  filter: blur(var(--tb-blur, 0));
 }
-${sel("::after")} {
+${live("::after")} {
   background-image: var(--ta-bg, none);
   background-size: var(--ta-size, auto);
   background-position: var(--ta-pos, 0 0);
@@ -508,7 +522,7 @@ css += `
 /* Pratinjau kecil di pemilih tema */
 .theme-swatch { position: relative; isolation: isolate; overflow: hidden; }
 .theme-swatch::before, .theme-swatch::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.theme-swatch::before { background-image: var(--tb-bg, none), var(--t-tint, none); background-size: var(--tb-size, auto), 100% 100%; background-position: var(--tb-pos, 0 0), 0 0; background-repeat: var(--tb-repeat, repeat), no-repeat; animation: var(--tb-anim, none); filter: blur(var(--tb-blur, 0)); }
+.theme-swatch::before { background-image: var(--tb-bg, none), var(--t-tint, none); background-size: var(--tb-size, auto), 100% 100%; background-position: var(--tb-pos, 0 0), 0 0; background-repeat: var(--tb-repeat, repeat), no-repeat; animation: var(--tb-anim, none); }
 .theme-swatch::after { background-image: var(--ta-bg, none); background-size: var(--ta-size, auto); background-position: var(--ta-pos, 0 0); background-repeat: var(--ta-repeat, repeat); animation: var(--ta-anim, none); }
 
 @media (prefers-reduced-motion: reduce) {
