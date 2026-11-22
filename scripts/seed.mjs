@@ -13,7 +13,7 @@ if (!SEED_PASSWORD || SEED_PASSWORD.length < 10) throw new Error("SEED_PASSWORD 
 
 const sql = neon(DATABASE_URL)
 const hash = await bcrypt.hash(SEED_PASSWORD, 12)
-const displayName = SEED_USERNAME.charAt(0).toUpperCase() + SEED_USERNAME.slice(1)
+const displayName = process.env.SEED_DISPLAY_NAME || SEED_USERNAME.charAt(0).toUpperCase() + SEED_USERNAME.slice(1)
 
 const [user] = await sql`
   insert into users (username, display_name, password_hash)

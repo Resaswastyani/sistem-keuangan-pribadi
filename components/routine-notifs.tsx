@@ -65,7 +65,7 @@ function RoutineRow({ g, template, open, onOpen, onSave }: { g: Group; template:
   const [body, setBody] = useState(g.notifyBody ?? "")
   useEffect(() => { setMinutes(g.remindBeforeMin ?? 10); setTitle(g.notifyTitle ?? ""); setBody(g.notifyBody ?? "") }, [g])
 
-  const vars = { nama: "Queens", judul: g.title, waktu: g.startTime, sisa: sisaLabel(minutes), detail: g.detail }
+  const vars = { nama: "Resa", judul: g.title, waktu: g.startTime, sisa: sisaLabel(minutes), detail: g.detail }
   const base = { ...template, customTitle: template.customTitle, customBody: template.customBody }
   const preview = renderPref({ ...base, customTitle: title || base.customTitle, customBody: body || base.customBody }, vars)
   const current = renderPref({ ...base, customTitle: g.notifyTitle ?? base.customTitle, customBody: g.notifyBody ?? base.customBody }, { ...vars, sisa: sisaLabel(g.remindBeforeMin ?? 10) })

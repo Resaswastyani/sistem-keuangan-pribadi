@@ -75,3 +75,23 @@
 .category-row.builtin { color: #a99ea6; }
 .category-row small { font-size: 8.5px; color: #8f858c; }
 .app-shell[data-theme="light"] .stat-link { color: #b4517d; }
+
+/* ---------- iOS PWA (Add to Home Screen): status bar transparan menutupi header ----------
+   viewport-fit=cover + status bar "black-translucent" membuat konten mulai dari y=0, di bawah jam/notch,
+   sehingga tombol menu tidak bisa ditekan. Geser header & sidebar sejauh safe-area. */
+.topbar { height:calc(68px + env(safe-area-inset-top, 0px)); padding-top:env(safe-area-inset-top, 0px); padding-left:max(clamp(22px,4vw,58px), env(safe-area-inset-left, 0px)); padding-right:max(clamp(22px,4vw,58px), env(safe-area-inset-right, 0px)); }
+.sidebar { padding-top:calc(25px + env(safe-area-inset-top, 0px)); }
+.dialog-scrim { padding-top:max(16px, env(safe-area-inset-top, 0px)); padding-bottom:max(16px, env(safe-area-inset-bottom, 0px)); }
+@media(max-width:1050px){ .topbar { padding-left:max(25px, env(safe-area-inset-left, 0px)); padding-right:max(25px, env(safe-area-inset-right, 0px)); } }
+@media(max-width:760px){
+  .topbar { height:calc(57px + env(safe-area-inset-top, 0px)); padding-left:max(19px, env(safe-area-inset-left, 0px)); padding-right:max(19px, env(safe-area-inset-right, 0px)); position:sticky; top:0; z-index:12; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); background:rgba(23,18,26,.82); }
+  .app-shell[data-theme="light"] .topbar { background:rgba(255,248,252,.86); }
+  .sidebar { padding-top:calc(22px + env(safe-area-inset-top, 0px)); padding-bottom:calc(15px + env(safe-area-inset-bottom, 0px)); }
+}
+@media(max-width:430px){ .topbar { padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); } }
+
+/* Logo baru: ikon penuh (squircle), bukan kotak kaca berisi ikon. */
+.brand-mark { flex:none;display:grid;place-items:center;padding:0;border:0 !important;background:none !important;border-radius:28%;overflow:hidden;box-shadow:0 6px 18px rgba(120,60,100,.28),0 0 0 1px rgba(255,255,255,.08) !important; }
+.brand-mark svg { display:block; }
+.app-shell[data-theme="light"] .brand-mark { box-shadow:0 6px 16px rgba(150,80,120,.22),0 0 0 1px rgba(120,70,100,.08) !important; }
+.brand { letter-spacing:-.6px; }

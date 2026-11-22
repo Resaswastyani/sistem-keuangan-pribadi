@@ -163,11 +163,11 @@ function CityDialog({ current, offset, hijri, onClose, onSaved }: { current: { i
 }
 
 const SAMPLE: Record<string, Record<string, string>> = {
-  _prayer: { nama: "Queens", sholat: "Dzuhur", waktu: "11:27", sisa: "sekarang", kota: "Boyolali", tanggal_hijriah: "11 Jumadil Akhir 1448 H" },
-  puasa_sunnah: { nama: "Queens", jenis: "Senin", tanggal_hijriah: "12 Jumadil Akhir 1448 H" },
-  digest: { nama: "Queens", ringkasan: "Hari ini kamu mencatat 3 transaksi, pengeluaran Rp 75.000.", jumlah_transaksi: "3", pengeluaran: "Rp 75.000", agenda_besok: "2" },
-  budget: { nama: "Queens", persen: "80", terpakai: "Rp 960.000", anggaran: "Rp 1.200.000" },
-  schedule: { nama: "Queens", judul: "Belajar", waktu: "19:00", sisa: "10 menit lagi", detail: "Bab 3" },
+  _prayer: { nama: "Resa", sholat: "Dzuhur", waktu: "11:27", sisa: "sekarang", kota: "Boyolali", tanggal_hijriah: "11 Jumadil Akhir 1448 H" },
+  puasa_sunnah: { nama: "Resa", jenis: "Senin", tanggal_hijriah: "12 Jumadil Akhir 1448 H" },
+  digest: { nama: "Resa", ringkasan: "Hari ini kamu mencatat 3 transaksi, pengeluaran Rp 75.000.", jumlah_transaksi: "3", pengeluaran: "Rp 75.000", agenda_besok: "2" },
+  budget: { nama: "Resa", persen: "80", terpakai: "Rp 960.000", anggaran: "Rp 1.200.000" },
+  schedule: { nama: "Resa", judul: "Belajar", waktu: "19:00", sisa: "10 menit lagi", detail: "Bab 3" },
 }
 
 /** Daftar notifikasi otomatis + editor pesan custom. Dipakai di menu Ibadah dan Pengaturan. */

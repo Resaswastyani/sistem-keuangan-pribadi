@@ -10,6 +10,7 @@ import { IbadahPage, NextPrayerMini, NotificationPrefs } from "@/components/ibad
 import { IconPicker, iconFor } from "@/components/icons"
 import { RoutinesPanel, WEEKDAYS, type Routine } from "@/components/routines"
 import { RoutineNotifs } from "@/components/routine-notifs"
+import { BrandMark } from "@/components/brand-mark"
 import { ThemePicker } from "@/components/theme-picker"
 import { currentSubscription, disablePush, enablePush, pushEnv, registerServiceWorker, type PushEnv } from "@/lib/push-client"
 
@@ -198,7 +199,7 @@ export function Dashboard() {
   if (!data) {
     return <main className="app-shell boot-screen" data-theme={light ? "light" : "dark"}>
       <div className="boot-card glass-panel">
-        <span className="brand-mark"><Sparkles size={19}/></span>
+        <BrandMark/>
         {loadError ? <><strong>Tidak bisa memuat data</strong><small>{loadError}</small><button className="primary-button" onClick={load}><RefreshCw size={15}/> Coba lagi</button></> : <><strong>Menyiapkan ruangmu…</strong><small>Sebentar ya</small></>}
       </div>
     </main>
@@ -243,7 +244,7 @@ export function Dashboard() {
 
   return <main className="app-shell" data-theme={light ? "light" : "dark"}>
     <aside className={`sidebar glass-panel ${menuOpen ? "sidebar-open" : ""}`}>
-      <a href="/" className="brand"><span className="brand-mark"><Sparkles size={19}/></span><span>mellow<span className="brand-dot">.</span><small>YOUR LIFE, IN FLOW</small></span></a>
+      <a href="/" className="brand"><BrandMark/><span>mellow<span className="brand-dot">.</span><small>YOUR LIFE, IN FLOW</small></span></a>
       <div className="side-label">MENU UTAMA</div>
       <nav className="nav-list" aria-label="Menu utama">{NAV.slice(0, 5).map(({ label, icon: Icon }) => <button key={label} onClick={() => selectPage(label)} className={`nav-item ${active === label ? "selected" : ""}`}><Icon size={18}/>{label}{label === "Jadwal" && data.schedule.length > 0 && <span className="nav-count">{data.schedule.length}</span>}</button>)}</nav>
       <div className="side-label space-top">PERSONAL</div>

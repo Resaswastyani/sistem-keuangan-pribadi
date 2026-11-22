@@ -1,6 +1,7 @@
 "use client"
 
-import { ArrowRight, Eye, EyeOff, Flower2, LockKeyhole, ShieldCheck, Sparkles, UserRound } from "lucide-react"
+import { BrandMark } from "@/components/brand-mark"
+import { ArrowRight, Eye, EyeOff, Flower2, LockKeyhole, ShieldCheck, UserRound } from "lucide-react"
 import { useState } from "react"
 import { api } from "@/lib/client-api"
 
@@ -24,7 +25,7 @@ export function LoginScreen() {
     }
   }
 
-  const brand = <a className="brand" href="/"><span className="brand-mark"><Sparkles size={19}/></span><span>mellow<span className="brand-dot">.</span><small>YOUR LIFE, IN FLOW</small></span></a>
+  const brand = <a className="brand" href="/"><BrandMark/><span>mellow<span className="brand-dot">.</span><small>YOUR LIFE, IN FLOW</small></span></a>
 
   return <main className="login-page"><div className="login-backdrop"><span className="blob blob-a"/><span className="blob blob-b"/><span className="blob blob-c"/></div><section className="login-frame glass-panel">
     <div className="login-visual"><div className="login-brand">{brand}</div><div className="visual-copy"><span className="visual-kicker"><Flower2 size={14}/> A LITTLE SPACE, JUST FOR YOU</span><h1>Hidup yang lebih teratur, <em>tanpa kehilangan ritmenya.</em></h1><p>Tempat kecil untuk merawat rencana, uang, dan waktu yang berarti.</p></div><div className="visual-bottom"><div className="mini-orbit"><span>✳</span><i/><b/></div><span>Hari ini adalah awal yang baik.<br/><strong>Jalani dengan caramu.</strong></span></div><span className="login-glass-orb"/></div>
