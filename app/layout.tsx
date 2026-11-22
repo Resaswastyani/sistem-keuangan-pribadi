@@ -4,6 +4,7 @@ import './globals.css'
 import './ibadah.css'
 import './themes.css'
 import './extras.css'
+import { PickerOnClick } from '@/components/picker-on-click'
 
 export const metadata: Metadata = {
   title: 'mellow — ruang kecil untuk hidup lebih teratur',
@@ -42,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="antialiased">
+        <PickerOnClick />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

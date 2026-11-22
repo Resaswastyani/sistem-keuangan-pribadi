@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Varian terang (dominan pink) khusus ikon iPhone "Tambah ke Layar Utama". iOS memotong sudutnya sendiri. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff4f8"/>
+      <stop offset=".55" stop-color="#ffd9e7"/>
+      <stop offset="1" stop-color="#f7b9d1"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".3" cy=".2" r=".7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f48fb8"/>
+      <stop offset=".55" stop-color="#e0679b"/>
+      <stop offset="1" stop-color="#b85ea8"/>
+    </linearGradient>
+    <linearGradient id="dot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe7a6"/>
+      <stop offset="1" stop-color="#eeb24e"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#c2507f" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <g filter="url(#soft)">
+    <path d="M150 346 V232 a53 53 0 0 1 106 0 V346 M256 232 a53 53 0 0 1 106 0 V300" fill="none" stroke="url(#mark)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="396" cy="158" r="25" fill="url(#dot)"/>
+  </g>
+</svg>

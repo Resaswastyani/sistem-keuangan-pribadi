@@ -3,6 +3,8 @@ import sharp from "sharp"
 import { mkdirSync, readFileSync } from "node:fs"
 
 const svg = readFileSync("public/icon.svg", "utf8")
+// Ikon iPhone (Tambah ke Layar Utama) memakai varian terang dominan pink.
+const appleSvg = readFileSync("public/icon-apple.svg", "utf8")
 mkdirSync("public/icons", { recursive: true })
 
 // Versi full-bleed (tanpa sudut membulat) untuk iOS & maskable Android — OS yang memotong bentuknya.
@@ -17,7 +19,7 @@ const out = [
   [svg, 512, "public/icons/icon-512.png"],
   [maskable, 192, "public/icons/maskable-192.png"],
   [maskable, 512, "public/icons/maskable-512.png"],
-  [fullBleed, 180, "public/apple-icon.png"],
+  [appleSvg, 180, "public/apple-icon.png"],
   [badge, 96, "public/icons/badge-96.png"],
   [svg, 32, "public/icon-light-32x32.png"],
   [svg, 32, "public/icon-dark-32x32.png"],
